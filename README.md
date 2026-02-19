@@ -1,4 +1,5 @@
 # Surplus-Tracker
+by Aretha Fontaine and Harika Vemulapalli
 
 The main goal of this software is to manage/track the disposal process of equipment/devices at Midwestern State University. Currently at the I.T. department, the surplus process is entirely maual, involving an array of chunky paperwork then drop-off to the university's warehouse where warehouse workers then also manually check the paperwork to ensure that all equipment is accounted for.    
 
