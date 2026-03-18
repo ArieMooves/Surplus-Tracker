@@ -1,28 +1,63 @@
 {
+  //  Project name (used by npm)
   "name": "surplus-tracker",
+
+  //  Current version of app
   "version": "1.0.0",
+
+  //  Short description 
   "description": "by Aretha Fontaine and Harika Vemulapalli",
+
+  //  Entry point 
   "main": "index.js",
+
   "scripts": {
+    //  Runs development server
     "dev": "next dev",
+
+    //  Builds the app for production
     "build": "next build",
+
+    //  Starts production server after build
     "start": "next start",
+
+    //  Placeholder test script (not implemented yet)
     "test": "echo \"Error: no test specified\" && exit 1"
   },
+
   "repository": {
+    //  Version control type
     "type": "git",
+
+    //  GitHub repository link
     "url": "git+https://github.com/ArieMooves/Surplus-Tracker.git"
   },
+
+  // Keywords help with discoverability (currently empty)
   "keywords": [],
-  "author": "",
+
+  //  Author info 
+  "author": "Aretha and Harika",
+
+  // License type (ISC is a permissive license)
   "license": "ISC",
+
   "dependencies": {
+    //  Next.js framework (handles routing, SSR, etc.)
     "next": "^13.5.3",
+
+    //  React library (UI components)
     "react": "^18.2.0",
+
+    // React DOM (renders React to the browser)
     "react-dom": "^18.2.0"
   },
+
   "bugs": {
+    //  Where users can report issues
     "url": "https://github.com/ArieMooves/Surplus-Tracker/issues"
   },
+
+  // Project homepage / README
   "homepage": "https://github.com/ArieMooves/Surplus-Tracker#readme"
 }
