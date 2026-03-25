@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from ai.claude_service import generate_asset_description
+from AI.anthropic_claude import generate_asset_description
 
 app = FastAPI(title="MSU Surplus Tracker API")
 
