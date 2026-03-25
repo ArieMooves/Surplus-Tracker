@@ -1,7 +1,10 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from AI.anthropic_claude import generate_asset_description
+from anthropic import Anthropic
+import os
+
+client = Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
 
 app = FastAPI(title="MSU Surplus Tracker API")
 
@@ -89,12 +92,23 @@ def add_scan_event(scan_event: ScanEvent):
 def get_scan_events():
     return scan_events
 
-# AI feature for dsecriptive item state logging
+# AI feature for descriptive item state logging
 @app.post("/generate-description")
 def generate_description(asset: dict):
-    description = generate_asset_description(
-        asset.get("item_name"),
-        asset.get("condition"),
-        asset.get("current_status")
+    prompt = f"""
+    Write a short, professional description for a surplus inventory system.
+
+    Item: {asset.get("item_name")}
+    Condition: {asset.get("condition")}
+    Status: {asset.get("current_status")}
+    """
+
+    response = client.messages.create(
+        model="claude-3-haiku-20240307",
+        max_tokens=100,
+        messages=[
+            {"role": "user", "content": prompt}
+        ]
     )
-    return {"description": description}
+
+    return {"description": response.content[0].text}
