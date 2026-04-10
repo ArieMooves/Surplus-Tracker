@@ -5,37 +5,31 @@ import Layout from "../components/Layout"
 import Link from "next/link"
 
 export default function Home() {
-  //  State to store assets from backend
   const [assets, setAssets] = useState([])
-
-  //  Loading state 
   const [loading, setLoading] = useState(true)
-
-  //  Optional: error state for robustness 
   const [error, setError] = useState(null)
 
-  //  Runs once when component loads
   useEffect(() => {
     loadAssets()
   }, [])
 
-  //  Fetch assets from FastAPI backend
   async function loadAssets() {
     try {
       const data = await getAssets()
-      setAssets(data)
+
+      
+      setAssets(Array.isArray(data) ? data : [])
     } catch (err) {
-      // Handle API failure
+      console.error(err)
       setError("Failed to load assets. Please try again.")
     } finally {
-      // Always stop loading 
       setLoading(false)
     }
   }
 
   return (
     <Layout>
-      {/*  Header Section */}
+      {/* HEADER */}
       <div className="flex justify-between items-center mb-6">
         <div>
           <h1 className="text-3xl font-bold text-gray-800">
@@ -46,7 +40,6 @@ export default function Home() {
           </p>
         </div>
 
-        {/*  Navigation to Add Asset Page */}
         <Link
           href="/add"
           className="bg-blue-600 text-white px-4 py-2 rounded-lg shadow hover:bg-blue-700 transition"
@@ -55,43 +48,55 @@ export default function Home() {
         </Link>
       </div>
 
-      {/*  CONDITIONAL RENDERING SECTION */}
-      {/* This is where loading, error, empty, and data states are handled */}
-
+      {/* STATES */}
       {loading ? (
-        //  1. Loading State (while waiting for backend)
-        <p className="text-gray-500">Loading assets...</p>
+        <div className="text-gray-500 text-center mt-10">
+          Loading assets...
+        </div>
 
       ) : error ? (
-        //  2. Error State (if API fails)
-        <p className="text-red-500">{error}</p>
+        <div className="text-red-500 text-center mt-10">
+          {error}
+        </div>
 
       ) : assets.length === 0 ? (
-        //  3. Empty State (no data exists)
-        <p className="text-gray-500 text-center mt-10">
+        <div className="text-gray-500 text-center mt-10">
           No assets yet. Click "Add Asset" to get started.
-        </p>
+        </div>
 
       ) : (
-        //  4. Data Display (normal case)
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {assets.map((asset) => (
             <div
-              key={asset.id}
+              key={asset.asset_id}  
               className="bg-white shadow-md rounded-xl p-5 hover:shadow-xl transition border"
             >
-              {/*  Asset Name */}
+              {/* NAME */}
               <h3 className="text-lg font-semibold text-gray-800">
                 {asset.item_name}
               </h3>
 
-              {/*  Condition */}
-              <p className="text-sm text-gray-500 mt-1">
-                Condition: {asset.condition}
+              {/* DESCRIPTION */}
+              {asset.description && (
+                <p className="text-sm text-gray-400 mt-1">
+                  {asset.description}
+                </p>
+              )}
+
+              {/* CONDITION */}
+              <p className="text-sm text-gray-500 mt-2">
+                Condition: {asset.condition || "N/A"}
               </p>
 
-              {/* Status Badge (color-coded for UX clarity) */}
-              <p
+              {/* LOCATION */}
+              {asset.location && (
+                <p className="text-sm text-gray-500">
+                  Location: {asset.location}
+                </p>
+              )}
+
+              {/* STATUS BADGE */}
+              <span
                 className={`mt-3 inline-block px-3 py-1 text-sm rounded-full ${
                   asset.current_status === "disposed"
                     ? "bg-red-100 text-red-600"
@@ -101,7 +106,7 @@ export default function Home() {
                 }`}
               >
                 {asset.current_status}
-              </p>
+              </span>
             </div>
           ))}
         </div>
