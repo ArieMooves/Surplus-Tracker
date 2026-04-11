@@ -1,4 +1,15 @@
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL
+const getBaseUrl = () => {
+  // If we are in a browser and in a Codespace environment
+  if (typeof window !== "undefined" && window.location.hostname.includes("github.dev")) {
+    const cluster = window.location.hostname.split('-3000')[1]; // Grabs the region/cluster info
+    const codespaceName = window.location.hostname.split('-3000')[0];
+    return `https://${codespaceName}-8000${cluster}`;
+  }
+  // Fallback to env variable for local/production
+  return process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+};
+
+const BASE_URL = getBaseUrl();
 
 // Helper to handle responses safely
 async function handleResponse(res) {
