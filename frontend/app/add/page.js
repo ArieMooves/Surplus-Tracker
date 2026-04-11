@@ -3,25 +3,22 @@
 import { useState } from "react"
 import { addAsset } from "../../lib/api"
 import Layout from "../../components/Layout"
+import BackButton from "../../components/BackButton"
 import { useRouter } from "next/navigation"
 
 export default function AddAsset() {
-  //  Router for redirecting after submission
   const router = useRouter()
 
-  //  Form state (stores user input)
+  // Updated state: removed 'id' as Postgres handles this automatically
   const [form, setForm] = useState({
-    id: "",
     asset_tag: "",
     item_name: "",
-    condition: "",
-    current_status: "active", // default value
+    condition: "Good", // Defaulting to Good
+    current_status: "surplus", // Defaulting to surplus for this tracker
   })
 
-  //  Loading state for UX feedback
   const [loading, setLoading] = useState(false)
 
-  //  Handle input changes (updates form state)
   function handleChange(e) {
     setForm({
       ...form,
@@ -29,93 +26,95 @@ export default function AddAsset() {
     })
   }
 
-  //  Handle form submission
   async function handleSubmit(e) {
     e.preventDefault()
     setLoading(true)
 
-    // Send data to backend API
-    const result = await addAsset({
-      ...form,
-      id: Number(form.id), // convert ID to number
-    })
-
-    setLoading(false)
-
-    // Basic success/error handling
-    if (result.error) {
-      alert(result.error)
-    } else {
-      alert("Asset added successfully!")
-
-      //  Redirect back to dashboard after success
-      router.push("/")
+    try {
+      const result = await addAsset(form)
+      
+      if (result) {
+        alert("Asset added successfully!")
+        router.push("/") // Redirect to dashboard
+      }
+    } catch (err) {
+      // Improved error display using the detailed message from api.js
+      alert("Error: " + err.message)
+    } finally {
+      setLoading(false)
     }
   }
 
   return (
     <Layout>
-      {/*  Centered Card Container */}
-      <div className="max-w-lg mx-auto bg-white p-6 rounded-xl shadow">
-        <h1 className="text-2xl font-bold mb-4">Add New Asset</h1>
+      <BackButton />
+      
+      <div className="max-w-lg mx-auto bg-white p-8 rounded-2xl shadow-sm border border-slate-200">
+        <h1 className="text-2xl font-bold text-brand-maroon mb-6 uppercase tracking-tight">
+          Register New Asset
+        </h1>
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="space-y-4">
-
-          {/* ID Field */}
-          <input
-            name="id"
-            placeholder="ID"
-            onChange={handleChange}
-            required
-            className="w-full border p-2 rounded"
-          />
-
+        <form onSubmit={handleSubmit} className="space-y-5">
           {/* Asset Tag */}
-          <input
-            name="asset_tag"
-            placeholder="Asset Tag / Barcode"
-            onChange={handleChange}
-            required
-            className="w-full border p-2 rounded"
-          />
+          <div>
+            <label className="block text-sm font-bold text-slate-700 mb-1">Asset Tag / Barcode</label>
+            <input
+              name="asset_tag"
+              placeholder="e.g. MSU-10045"
+              onChange={handleChange}
+              required
+              className="w-full border border-slate-300 p-2.5 rounded-lg focus:ring-2 focus:ring-brand-gold focus:border-brand-maroon outline-none transition-all"
+            />
+          </div>
 
           {/* Item Name */}
-          <input
-            name="item_name"
-            placeholder="Item Name"
-            onChange={handleChange}
-            required
-            className="w-full border p-2 rounded"
-          />
+          <div>
+            <label className="block text-sm font-bold text-slate-700 mb-1">Item Name</label>
+            <input
+              name="item_name"
+              placeholder="e.g. Dell Latitude Laptop"
+              onChange={handleChange}
+              required
+              className="w-full border border-slate-300 p-2.5 rounded-lg focus:ring-2 focus:ring-brand-gold focus:border-brand-maroon outline-none transition-all"
+            />
+          </div>
 
-          {/* Condition */}
-          <input
-            name="condition"
-            placeholder="Condition (e.g., Good, Fair, Poor)"
-            onChange={handleChange}
-            required
-            className="w-full border p-2 rounded"
-          />
+          {/* Condition Dropdown (Better than text input for data consistency) */}
+          <div>
+            <label className="block text-sm font-bold text-slate-700 mb-1">Condition</label>
+            <select
+              name="condition"
+              onChange={handleChange}
+              className="w-full border border-slate-300 p-2.5 rounded-lg outline-none focus:ring-2 focus:ring-brand-gold"
+            >
+              <option value="New">New</option>
+              <option value="Good">Good</option>
+              <option value="Fair">Fair</option>
+              <option value="Poor">Poor/Broken</option>
+            </select>
+          </div>
 
           {/* Status Dropdown */}
-          <select
-            name="current_status"
-            onChange={handleChange}
-            className="w-full border p-2 rounded"
-          >
-            <option value="active">Active</option>
-            <option value="surplus">Surplus</option>
-            <option value="disposed">Disposed</option>
-          </select>
+          <div>
+            <label className="block text-sm font-bold text-slate-700 mb-1">Status</label>
+            <select
+              name="current_status"
+              onChange={handleChange}
+              className="w-full border border-slate-300 p-2.5 rounded-lg outline-none focus:ring-2 focus:ring-brand-gold"
+            >
+              <option value="active">Active</option>
+              <option value="surplus">Surplus</option>
+              <option value="disposed">Disposed</option>
+            </select>
+          </div>
 
-          {/* Submit Button */}
+          {/* Submit Button - Branded Maroon */}
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition disabled:bg-gray-400"
+            className="w-full bg-brand-maroon text-white font-bold py-3 rounded-lg hover:bg-brand-dark transition-all shadow-md disabled:bg-slate-400 disabled:cursor-not-allowed mt-4"
           >
-            {loading ? "Adding..." : "Add Asset"}
+            {loading ? "Registering..." : "Add Asset to Database"}
           </button>
         </form>
       </div>
