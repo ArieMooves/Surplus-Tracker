@@ -5,7 +5,7 @@ import { addAsset, generateAIDescription } from "../../lib/api"
 import Layout from "../../components/Layout"
 import BackButton from "../../components/BackButton"
 import { useRouter } from "next/navigation"
-import { Sparkles } from 'lucide-react' // Ensure lucide-react is installed
+import { Sparkles } from 'lucide-react' 
 
 export default function AddAsset() {
   const router = useRouter()
@@ -17,7 +17,7 @@ export default function AddAsset() {
     item_name: "",
     condition: "Good",
     current_status: "surplus",
-    description: "" // This field was missing in your previous version
+    description: "" 
   })
 
   function handleChange(e) {
@@ -106,7 +106,7 @@ export default function AddAsset() {
             </div>
             <textarea
               name="description"
-              value={form.description} // Bound to state so AI can fill it
+              value={form.description} 
               onChange={handleChange}
               rows="3"
               className="w-full border border-slate-300 p-2.5 rounded-lg focus:ring-2 focus:ring-brand-gold outline-none text-sm"
