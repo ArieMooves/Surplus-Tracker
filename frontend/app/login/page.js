@@ -15,7 +15,7 @@ export default function Login() {
     <div className="min-h-screen bg-brand-maroon flex items-center justify-center p-4">
       <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl p-10 text-center border-t-8 border-brand-gold">
         <div className="mb-8">
-          <h1 className="text-4xl font-black text-brand-maroon italic tracking-tighter">MSU SURPLUS</h1>
+          <h1 className="text-4xl font-black text-brand-maroon italic tracking-tighter">MSU SURPLUS tracker</h1>
           <p className="text-slate-400 uppercase tracking-widest text-xs font-bold mt-2">Asset Management Portal</p>
         </div>
 
