@@ -28,10 +28,7 @@ app = FastAPI(title="MSU Surplus Tracker API")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
-    ],
+    allow_origins=["*"],  # Allows any URL 
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -316,3 +313,8 @@ def get_audit(asset_id: int, db: Session = Depends(get_db)):
         .filter(AssetAuditEventModel.asset_id == asset_id)
         .all()
     )
+
+if __name__ == "__main__":
+    import uvicorn
+    # host="0.0.0.0" makes the server reachable outside the container
+    uvicorn.run(app, host="0.0.0.0", port=8000)
