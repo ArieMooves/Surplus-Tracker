@@ -8,7 +8,7 @@ DB_PARAMS = {
     "user": "postgres",
     "password": "postgres",
     "host": "localhost",
-    "port": "5420" # Change to 5432 if that is your local port
+    "port": "5432" 
 }
 
 fake = Faker()
