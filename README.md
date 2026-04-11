@@ -1,6 +1,8 @@
-# Surplus-Tracker
-by Aretha Fontaine and Harika Vemulapalli
+Student(s): Aretha Fontaine, Harika Vemulapalli
+Professor: Dr. Eduardo Colmenares
+Course: CMPS5153 Advanced Software Engineering
 
-The main goal of this software is to manage/track the disposal process of equipment/devices at Midwestern State University. Currently at the I.T. department, the surplus process is entirely manual, involving an array of chunky paperwork then drop-off to the university's warehouse where warehouse workers then also manually check the paperwork to ensure that all equipment is accounted for.    
+MSU Surplus Tracker: The first surplus management system of  MSU Texas.
 
-With our system in place, the need for manual checking would be reduced to a simple barcode scan. Surplus tracker would retrieve the metadata of every device on campus, and collaborate with existing inventory systems in place to recommend surplus timelines, among other helpful actions. Every transaction will be thoroughly logged, to minimize the risk of unauthorized disposal and lack of accountability. 
+
+Currently at Midwestern State University, the process of disposing and recycling university hardware, equipment, furniture and other materials is entirely manual. This process includes manual logging followed by delivery to the university's warehouse where staff then also manually check the paperwork to ensure all items are accounted for. This presentation introduces MSU Surplus Tracker, a centralized surplus tracking system capable of streamlining this process by providing a single platform for logging, managing, and documenting surplus items. With this system in place, bulky paperwork would be reduced to a simple barcode scan, minimizing inefficient disposal tracking and data inaccuracies.
