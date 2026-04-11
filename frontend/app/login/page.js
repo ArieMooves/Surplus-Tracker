@@ -30,9 +30,9 @@ export default function Login() {
             <div className="relative flex justify-center text-xs uppercase"><span className="bg-white px-2 text-slate-400 font-bold">Official Access</span></div>
           </div>
 
-          <input type="email" placeholder="NetID Email" className="w-full p-3 border rounded-lg bg-slate-50 outline-none" disabled />
+          <input type="username" placeholder="email" className="w-full p-3 border rounded-lg bg-slate-50 outline-none" disabled />
           <button className="w-full border-2 border-slate-200 text-slate-400 font-bold py-3 rounded-lg cursor-not-allowed">
-            Sign in with MSU SSO
+            Sign in with Mustangs ID
           </button>
           <p className="text-[10px] text-slate-400 italic">SSO Integration Pending Department Approval</p>
         </div>
