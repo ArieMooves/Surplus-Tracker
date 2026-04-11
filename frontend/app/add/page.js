@@ -1,23 +1,24 @@
 "use client"
 
 import { useState } from "react"
-import { addAsset } from "../../lib/api"
+import { addAsset, generateAIDescription } from "../../lib/api"
 import Layout from "../../components/Layout"
 import BackButton from "../../components/BackButton"
 import { useRouter } from "next/navigation"
+import { Sparkles } from 'lucide-react' // Ensure lucide-react is installed
 
 export default function AddAsset() {
   const router = useRouter()
+  const [loading, setLoading] = useState(false)
+  const [isGenerating, setIsGenerating] = useState(false)
 
-  // Updated state: removed 'id' as Postgres handles this automatically
   const [form, setForm] = useState({
     asset_tag: "",
     item_name: "",
-    condition: "Good", // Defaulting to Good
-    current_status: "surplus", // Defaulting to surplus for this tracker
+    condition: "Good",
+    current_status: "surplus",
+    description: "" // This field was missing in your previous version
   })
-
-  const [loading, setLoading] = useState(false)
 
   function handleChange(e) {
     setForm({
@@ -26,19 +27,30 @@ export default function AddAsset() {
     })
   }
 
+  // AI Generation Logic
+  const handleAI = async () => {
+    if (!form.item_name) return alert("Please enter an item name first!");
+    setIsGenerating(true);
+    try {
+      const result = await generateAIDescription(form.item_name, form.condition);
+      setForm({ ...form, description: result.description });
+    } catch (err) {
+      alert("AI Generation failed: " + err.message);
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
   async function handleSubmit(e) {
     e.preventDefault()
     setLoading(true)
-
     try {
       const result = await addAsset(form)
-      
       if (result) {
         alert("Asset added successfully!")
-        router.push("/") // Redirect to dashboard
+        router.push("/")
       }
     } catch (err) {
-      // Improved error display using the detailed message from api.js
       alert("Error: " + err.message)
     } finally {
       setLoading(false)
@@ -55,19 +67,18 @@ export default function AddAsset() {
         </h1>
 
         <form onSubmit={handleSubmit} className="space-y-5">
-          {/* Asset Tag */}
+          {/* Asset Tag - Example updated to 49561 */}
           <div>
             <label className="block text-sm font-bold text-slate-700 mb-1">Asset Tag / Barcode</label>
             <input
               name="asset_tag"
-              placeholder="e.g. MSU-10045"
+              placeholder="e.g. 49561" 
               onChange={handleChange}
               required
-              className="w-full border border-slate-300 p-2.5 rounded-lg focus:ring-2 focus:ring-brand-gold focus:border-brand-maroon outline-none transition-all"
+              className="w-full border border-slate-300 p-2.5 rounded-lg focus:ring-2 focus:ring-brand-gold outline-none"
             />
           </div>
 
-          {/* Item Name */}
           <div>
             <label className="block text-sm font-bold text-slate-700 mb-1">Item Name</label>
             <input
@@ -75,44 +86,58 @@ export default function AddAsset() {
               placeholder="e.g. Dell Latitude Laptop"
               onChange={handleChange}
               required
-              className="w-full border border-slate-300 p-2.5 rounded-lg focus:ring-2 focus:ring-brand-gold focus:border-brand-maroon outline-none transition-all"
+              className="w-full border border-slate-300 p-2.5 rounded-lg focus:ring-2 focus:ring-brand-gold outline-none"
             />
           </div>
 
-          {/* Condition Dropdown (Better than text input for data consistency) */}
+          {/* Description with AI Sparkles Button */}
           <div>
-            <label className="block text-sm font-bold text-slate-700 mb-1">Condition</label>
-            <select
-              name="condition"
+            <div className="flex justify-between items-end mb-1">
+              <label className="block text-sm font-bold text-slate-700">Description</label>
+              <button 
+                type="button"
+                onClick={handleAI}
+                disabled={isGenerating}
+                className="flex items-center gap-1 text-[10px] font-black uppercase tracking-wider text-brand-maroon hover:text-brand-gold transition-colors"
+              >
+                <Sparkles size={12} />
+                {isGenerating ? "AI Thinking..." : "Auto-Fill with Claude"}
+              </button>
+            </div>
+            <textarea
+              name="description"
+              value={form.description} // Bound to state so AI can fill it
               onChange={handleChange}
-              className="w-full border border-slate-300 p-2.5 rounded-lg outline-none focus:ring-2 focus:ring-brand-gold"
-            >
-              <option value="New">New</option>
-              <option value="Good">Good</option>
-              <option value="Fair">Fair</option>
-              <option value="Poor">Poor/Broken</option>
-            </select>
+              rows="3"
+              className="w-full border border-slate-300 p-2.5 rounded-lg focus:ring-2 focus:ring-brand-gold outline-none text-sm"
+              placeholder="Briefly describe the item's features or faults..."
+            />
           </div>
 
-          {/* Status Dropdown */}
-          <div>
-            <label className="block text-sm font-bold text-slate-700 mb-1">Status</label>
-            <select
-              name="current_status"
-              onChange={handleChange}
-              className="w-full border border-slate-300 p-2.5 rounded-lg outline-none focus:ring-2 focus:ring-brand-gold"
-            >
-              <option value="active">Active</option>
-              <option value="surplus">Surplus</option>
-              <option value="disposed">Disposed</option>
-            </select>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-bold text-slate-700 mb-1">Condition</label>
+              <select name="condition" onChange={handleChange} className="w-full border p-2.5 rounded-lg outline-none">
+                <option value="New">New</option>
+                <option value="Good">Good</option>
+                <option value="Fair">Fair</option>
+                <option value="Poor">Poor/Broken</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-bold text-slate-700 mb-1">Status</label>
+              <select name="current_status" onChange={handleChange} className="w-full border p-2.5 rounded-lg outline-none">
+                <option value="active">Active</option>
+                <option value="surplus">Surplus</option>
+                <option value="disposed">Disposed</option>
+              </select>
+            </div>
           </div>
 
-          {/* Submit Button - Branded Maroon */}
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-brand-maroon text-white font-bold py-3 rounded-lg hover:bg-brand-dark transition-all shadow-md disabled:bg-slate-400 disabled:cursor-not-allowed mt-4"
+            className="w-full bg-brand-maroon text-white font-bold py-3 rounded-lg hover:bg-brand-dark transition-all shadow-md disabled:opacity-50 mt-4"
           >
             {loading ? "Registering..." : "Add Asset to Database"}
           </button>
