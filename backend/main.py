@@ -7,7 +7,7 @@ from fastapi.security import APIKeyHeader
 from pydantic import BaseModel
 from sqlalchemy import or_
 from sqlalchemy.orm import Session
-from anthropic import Anthropic  # New: Anthropic Import
+import google.generativeai as genai
 
 from database import Base, engine, get_db
 import models
@@ -26,7 +26,8 @@ Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="MSU Surplus Tracker API")
 
-anthropic_client = Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
+genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+model = genai.GenerativeModel('gemini-1.5-flash-lite') 
 
 app.add_middleware(
     CORSMiddleware,
@@ -133,25 +134,19 @@ def root():
 # NEW: AI Description Generation Endpoint
 @app.post("/generate-description")
 async def generate_description(req: AIDescriptionRequest):
-    if not os.getenv("ANTHROPIC_API_KEY"):
-        raise HTTPException(status_code=500, detail="Anthropic API Key not configured on server")
+    
+    if not os.getenv("GEMINI_API_KEY"):
+        raise HTTPException(status_code=500, detail="Gemini API Key not configured on server")
     
     try:
-        message = anthropic_client.messages.create(
-            model="claude-3-haiku-20240307",
-            max_tokens=100,
-            temperature=0.7,
-            system="You are an expert MSU Surplus Property Manager. Write a professional, 1-sentence inventory description.",
-            messages=[
-                {
-                    "role": "user", 
-                    "content": f"Describe a {req.item_name} in {req.condition} condition for an official inventory record."
-                }
-            ]
-        )
-        return {"description": message.content[0].text}
+        prompt = f"You are an expert MSU Surplus Property Manager. Describe a {req.item_name} in {req.condition} condition for an official inventory record in one professional sentence."
+        
+        response = model.generate_content(prompt)
+        
+        return {"description": response.text.strip()}
+        
     except Exception as e:
-        print(f"Anthropic Error: {e}")
+        print(f"Gemini Error: {e}")
         raise HTTPException(status_code=500, detail="Failed to generate AI description")
 
 @app.get("/assets", response_model=list[AssetOut])
