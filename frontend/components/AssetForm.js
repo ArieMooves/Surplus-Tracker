@@ -31,3 +31,34 @@ const handleGenerateDescription = async () => {
     setLoading(false);
   }
 };
+
+return (
+  <form className="space-y-4">
+    {/* ... other input fields for Name, Tag, etc. ... */}
+
+    <div className="flex flex-col">
+      <label className="font-semibold text-gray-700">Description</label>
+      <div className="flex items-start gap-2">
+        <textarea
+          className="w-full p-2 border rounded-md shadow-sm"
+          rows="3"
+          value={formData.description}
+          onChange={(e) => setFormData({...formData, description: e.target.value})}
+          placeholder="Enter details or use the AI generator..."
+        />
+        
+        {/* JSX EDIT */}
+        <button
+          type="button"
+          onClick={handleGenerateDescription}
+          disabled={loading}
+          className="whitespace-nowrap bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 transition disabled:bg-gray-400"
+        >
+          {loading ? "Thinking..." : "Auto-fill"}
+        </button>
+      </div>
+    </div>
+
+    {/* ... Submit Button ... */}
+  </form>
+);
