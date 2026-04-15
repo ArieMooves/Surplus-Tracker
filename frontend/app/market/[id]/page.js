@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
-import Layout from '../../../components/Layout'; 
+import Layout from '../../../components/Layout';
 
 export default function MarketPage({ params }) {
   const [data, setData] = useState(null);
