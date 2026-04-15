@@ -110,7 +110,7 @@ export default function AssetForm() {
             disabled={loading}
             className="bg-indigo-600 text-white px-4 py-3 rounded-lg hover:bg-indigo-700 font-bold text-[10px] uppercase tracking-tighter"
           >
-            {loading ? "..." : "AI Fix"}
+            {loading ? "..." : "Fix"}
           </button>
         </div>
       </div>
