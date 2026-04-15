@@ -23,8 +23,11 @@ export default function AssetForm() {
 
   setLoading(true);
   try {
-    const baseUrl = process.env.NEXT_PUBLIC_API_URL;
-    const response = await fetch(`${baseUrl}/generate-description`, {
+ 
+    const codespaceName = process.env.NEXT_PUBLIC_CODESPACE_NAME || ""; 
+    const backendUrl = `https://${codespaceName}-8000.app.github.dev/generate-description`;
+  
+    const response = await fetch(backendUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ 
