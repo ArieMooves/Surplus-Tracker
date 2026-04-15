@@ -164,7 +164,7 @@ export default function InventoryPage() {
             <div className="p-6 bg-slate-50 border-t border-slate-100 flex flex-col gap-3">
               {/* Dynamic Market Analysis Link */}
               <Link 
-                href={`/market/${selectedAsset.asset_id || selectedAsset.id}`}
+                href="/market"
                 className="w-full bg-brand-gold text-brand-maroon font-black py-4 rounded-xl hover:bg-yellow-500 transition-all flex items-center justify-center gap-2 shadow-md uppercase tracking-widest text-xs"
               >
                 <BarChart2 size={18} />
