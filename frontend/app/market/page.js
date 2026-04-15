@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from 'react';
-import Layout from "../components/Layout";
+import Layout from "../../components/Layout";
 import { BarChart2, ShoppingCart, Globe, Tag } from 'lucide-react';
 
 export default function MarketDashboard() {
