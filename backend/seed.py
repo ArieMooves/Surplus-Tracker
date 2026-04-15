@@ -1,10 +1,10 @@
 import psycopg2
 import random
 
-# Database connection details 
+
 DB_PARAMS = {
-    "dbname": "postgres",
-    "user": "postgres",
+    "dbname": "msu_surplus_db", # Use your specific database name
+    "user": "postgres",         # Default superuser
     "password": "postgres",
     "host": "localhost",
     "port": "5432" 
@@ -21,7 +21,7 @@ departments = [
     "Computer Science", "Title IX", "University Police"
 ]
 
-# Item pool with specific model numbers for better AI price matching
+
 item_pool = {
     "Dell Latitude 5420 Laptop": "High-performance workstation with Core i7. Previously assigned to staff in {dept}.",
     "Herman Miller Aeron Chair": "Ergonomic office seating, size B. Surplus from {dept} office renovation.",
@@ -42,26 +42,24 @@ def seed_data():
         cur = conn.cursor()
 
         print("Cleaning old database entries...")
-        
+        # RESTART IDENTITY ensures IDs start back at 1
         cur.execute("TRUNCATE TABLE assets RESTART IDENTITY CASCADE;")
 
         print("Seeding MSU Surplus Database with Realistic AI-Ready Data...")
 
         items_list = list(item_pool.keys())
+        
+        # Generate 25 UNIQUE tags upfront to avoid duplicate key errors
+        unique_tags = random.sample(range(40000, 59999), 25)
 
-        for _ in range(25):
-            # Asset Tag: XXXXX format looks very professional
-            tag_number = random.randint(40000, 59999)
-            asset_tag = f"{tag_number}" 
+        for i in range(25):
+            asset_tag = str(unique_tags[i])
             
-            # Select Department
             dept = random.choice(departments)
-            
-            # Select Item and Inject Department into Description
             item_name = random.choice(items_list)
             description = item_pool[item_name].format(dept=dept)
-            
             condition = random.choice(conditions)
+            
             
             status = random.choices(statuses, weights=[10, 80, 10], k=1)[0]
             
@@ -74,12 +72,14 @@ def seed_data():
             )
 
         conn.commit()
-        cur.close()
-        conn.close()
         print(f"Successfully added 25 AI-optimized assets across {len(departments)} MSU departments!")
         
     except Exception as e:
         print(f"Error seeding database: {e}")
+    finally:
+        if conn:
+            cur.close()
+            conn.close()
 
 if __name__ == "__main__":
     seed_data()
