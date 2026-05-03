@@ -9,11 +9,11 @@ export async function GET() {
     { id: "2", name: "Herman Miller Aeron Chair", cond: "Good" },
     { id: "3", name: "Sony PS5 Console", cond: "New" },
     { id: "4", name: "Apple iPad Pro 12.9 (M2)", cond: "Good" },
-    { id: "5", name: "Epson PowerLite Projector", cond: "Poor" },
+    { id: "5", name: "Epson PowerLite 1781W Wireless Projector", cond: "Poor" },
     { id: "6", name: "Steelcase Gesture Chair", cond: "Fair" },
     { id: "7", name: "Microsoft Surface Pro 9", cond: "New" },
-    { id: "8", name: "Cisco C9200L Switch", cond: "Good" },
-    { id: "9", name: "Samsung 65-inch 4K TV", cond: "Fair" },
+    { id: "8", name: "Cisco Catalyst 9200L 24-port Switch", cond: "Good" },
+    { id: "9", name: "Samsung Crystal UHD 65-inch 4K TV (2023)", cond: "Fair" },
     { id: "10", name: "Polycom Trio 8800", cond: "Good" },
     { id: "11", name: "MacBook Pro 14-inch (M3)", cond: "New" },
     { id: "12", name: "HP EliteDesk 800 G6", cond: "Good" },
@@ -23,7 +23,7 @@ export async function GET() {
     { id: "16", name: "Canon EOS R6 Camera", cond: "Fair" },
     { id: "17", name: "Steelcase Leap V2 Chair", cond: "Good" },
     { id: "18", name: "Lenovo ThinkPad X1 Carbon", cond: "New" },
-    { id: "19", name: "Netgear Nighthawk Router", cond: "Fair" },
+    { id: "19", name: "Netgear Nighthawk AX5400 WiFi 6 Router", cond: "Fair" },
     { id: "20", name: "Apple AirPods Max", cond: "Good" },
     { id: "21", name: "Sony WH-1000XM5", cond: "Fair" },
     { id: "22", name: "Wacom Intuos Pro Tablet", cond: "Good" },
@@ -77,7 +77,6 @@ export async function GET() {
 
   } catch (error) {
     console.error("Market API Error:", error);
-    // Return a valid empty array structure instead of crashing the frontend
     return NextResponse.json([], { status: 200 });
   }
 }
