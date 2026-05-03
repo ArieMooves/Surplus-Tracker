@@ -6,7 +6,7 @@ import BackButton from "../../components/BackButton";
 import { getAssetByTag } from "../../lib/api";
 import { Camera, Barcode, Laptop, AlertCircle, CheckCircle2, ScanLine } from "lucide-react";
 
-const QRScanner = dynamic(() => import("../../components/QRScanner"), { 
+const BarcodeScanner = dynamic(() => import("../../components/BarcodeScanner"), { 
   ssr: false,
   loading: () => (
     <div className="h-64 flex items-center justify-center bg-slate-50 rounded-xl border-2 border-dashed border-slate-200">
@@ -53,7 +53,7 @@ export default function ScannerPage() {
         
         <div className="mb-8 mt-4">
           <h1 className="text-3xl font-black text-brand-maroon italic tracking-tighter flex items-center gap-3 uppercase">
-            <ScanLine size={32} className="text-brand-gold" />
+            <Barcode size={32} className="text-brand-gold" />
             Scanner Portal
           </h1>
           <p className="text-slate-500 font-medium">
@@ -85,7 +85,7 @@ export default function ScannerPage() {
           <div className="p-8">
             {activeTab === "camera" ? (
               <div key="camera-view" className="animate-in fade-in zoom-in-95 duration-300">
-                {mounted && <QRScanner onScanSuccess={handleScan} />}
+                {mounted && <BarcodeScanner onScanSuccess={handleScan} />}
               </div>
             ) : (
               <div key="wand-view" className="py-12 text-center animate-in slide-in-from-bottom-4 duration-300">
