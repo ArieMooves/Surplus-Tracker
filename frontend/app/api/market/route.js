@@ -33,33 +33,51 @@ export async function GET() {
   ];
 
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const model = genAI.getGenerativeModel({ 
+      model: "gemini-1.5-flash",
+      // Force the model to only output valid JSON
+      generationConfig: { responseMimeType: "application/json" }
+    });
     
     const prompt = `
       Act as an MSU Surplus specialist. For the provided list of 25 items, generate realistic secondary market prices.
-      Return the data as a JSON array where each object has "id", "msu", "ebay", and "amazon".
+      Return a JSON array of objects. Each object MUST follow this EXACT schema:
+      { "id": "string", "msu": number, "ebay": number, "amazon": number }
       
       Requirements: 
-      - "msu" should be the lowest (surplus price).
-      - "ebay" and "amazon" should be realistic market rates.
-      - Ensure prices reflect the Condition (New/Good/Fair/Poor).
-
-      Items: ${itemsToAnalyze.map(i => `${i.id}: ${i.name} (${i.cond})`).join(", ")}
+      - "msu" is the internal surplus price (lowest).
+      - "ebay" and "amazon" are current market averages.
+      - Adjust prices based on the provided Condition.
+      
+      Items: ${JSON.stringify(itemsToAnalyze)}
     `;
 
     const result = await model.generateContent(prompt);
     const responseText = result.response.text();
-    const cleanJson = responseText.replace(/```json|```/g, "").trim();
-    const aiPrices = JSON.parse(cleanJson);
+    
+    // Safety check for empty response
+    if (!responseText) throw new Error("AI returned an empty response");
 
-    const finalData = itemsToAnalyze.map(item => ({
-      ...item,
-      prices: aiPrices.find(p => p.id === item.id) || { msu: "0", ebay: "0", amazon: "0" }
-    }));
+    const aiPrices = JSON.parse(responseText);
+
+    const finalData = itemsToAnalyze.map(item => {
+      const priceMatch = aiPrices.find(p => p.id === item.id.toString());
+      return {
+        ...item,
+        // Nesting the prices to match frontend item.prices.msu access
+        prices: {
+          msu: priceMatch?.msu || 0,
+          ebay: priceMatch?.ebay || 0,
+          amazon: priceMatch?.amazon || 0
+        }
+      };
+    });
 
     return NextResponse.json(finalData);
 
   } catch (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error("Market API Error:", error);
+    // Return a valid empty array structure instead of crashing the frontend
+    return NextResponse.json([], { status: 200 });
   }
 }
