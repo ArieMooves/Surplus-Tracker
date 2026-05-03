@@ -1,31 +1,23 @@
 from datetime import datetime
 import os
+from typing import List, Optional
+import random
 
 from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.security import APIKeyHeader
 from pydantic import BaseModel
-from sqlalchemy import or_
 from sqlalchemy.orm import Session
 import google.generativeai as genai
 
 from database import Base, engine, get_db
 import models
-
-# Models (SQLAlchemy)
-from models import (
-    Asset as AssetModel,
-    AssetAuditEvent as AssetAuditEventModel,
-    Department as DepartmentModel,
-    DisposalRecord as DisposalRecordModel,
-    ScanEvent as ScanEventModel,
-    User as UserModel,
-)
+from models import Asset as AssetModel
 
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="MSU Surplus Tracker API")
 
+# Setup Gemini
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 model = genai.GenerativeModel('gemini-1.5-flash-lite') 
 
@@ -37,19 +29,22 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# --- SCHEMAS ---
+
+class MarketPriceOut(BaseModel):
+    msu: float = 0.0
+    ebay: Optional[float] = None
+    amazon: Optional[float] = None
+
+class MarketItemOut(BaseModel):
+    id: int
+    name: str
+    cond: str
+    prices: MarketPriceOut
+
 class AIDescriptionRequest(BaseModel):
     item_name: str
     condition: str
-
-class AssetCreate(BaseModel):
-    asset_tag: str
-    item_name: str
-    description: str | None = None
-    condition: str | None = None
-    current_status: str
-    location: str | None = None
-    department_id: int | None = None
-    submitted_by: int | None = None
 
 class AssetOut(BaseModel):
     asset_id: int
@@ -58,156 +53,53 @@ class AssetOut(BaseModel):
     description: str | None = None
     condition: str | None = None
     current_status: str
-    location: str | None = None
-    department_id: int | None = None
-    submitted_by: int | None = None
     created_at: datetime | None = None
-
     class Config:
         from_attributes = True
 
-class StatusUpdate(BaseModel):
-    current_status: str
-    updated_by: int | None = None
-
-class ScanEventCreate(BaseModel):
-    asset_id: int
-    scan_location: str
-    scanned_by: int | None = None
-
-class ScanEventOut(BaseModel):
-    scan_id: int
-    asset_id: int | None = None
-    scanned_by: int | None = None
-    scan_time: datetime | None = None
-    scan_location: str | None = None
-
-    class Config:
-        from_attributes = True
-
-class DepartmentOut(BaseModel):
-    department_id: int
-    department_name: str
-
-    class Config:
-        from_attributes = True
-
-class UserOut(BaseModel):
-    user_id: int
-    full_name: str
-    email: str
-    role: str
-    department_id: int | None = None
-
-    class Config:
-        from_attributes = True
-
-class DisposalRecordOut(BaseModel):
-    record_id: int
-    asset_id: int | None = None
-    recommended_action: str | None = None
-    final_action: str | None = None
-    approved_by: int | None = None
-    notes: str | None = None
-    updated_at: datetime | None = None
-
-    class Config:
-        from_attributes = True
-
-class AssetAuditEventOut(BaseModel):
-    audit_id: int
-    asset_id: int | None = None
-    event_type: str
-    field_name: str | None = None
-    old_value: str | None = None
-    new_value: str | None = None
-    changed_by: int | None = None
-    changed_at: datetime | None = None
-
-    class Config:
-        from_attributes = True
+# --- ROUTES ---
 
 @app.get("/")
 def root():
     return {"message": "MSU Surplus Tracker API running"}
 
-@app.post("/generate-description")
-async def generate_description(req: AIDescriptionRequest):
-    if not os.getenv("GEMINI_KEY"):
-        raise HTTPException(status_code=500, detail="Gemini API Key not configured")
-    
+@app.get("/api/market", response_model=List[MarketItemOut])
+def get_market_analysis(db: Session = Depends(get_db)):
     try:
-        prompt = (
-            f"You are a professional MSU Surplus Property Clerk. "
-            f"The user provided these notes about an item: '{req.item_name}'. "
-            f"The item is in {req.condition} condition. "
-            f"Task: Rewrite the user's notes into a concise, professional 1-sentence inventory description. "
-            f"Focus strictly on the condition and any issues mentioned. Do not invent details not provided by the user."
-        )
+        # Fetch up to 25 assets for comparison
+        assets = db.query(AssetModel).order_by(AssetModel.asset_id.desc()).limit(25).all()
         
-        response = model.generate_content(prompt)
-        return {"description": response.text.strip()}
-        
+        market_results = []
+        for asset in assets:
+            market_results.append(MarketItemOut(
+                id=asset.asset_id,
+                name=asset.item_name,
+                cond=asset.condition or "Used",
+                prices=MarketPriceOut(
+                    msu=10.0, # Replace with actual price logic/column
+                    ebay=None,
+                    amazon=None
+                )
+            ))
+        return market_results
     except Exception as e:
-        raise HTTPException(status_code=500, detail="Failed to paraphrase description")
+        print(f"Error fetching market data: {e}")
+        return [] # Return empty list to prevent frontend crash
 
 @app.get("/assets", response_model=list[AssetOut])
 def get_assets(db: Session = Depends(get_db)):
     return db.query(AssetModel).all()
 
-@app.post("/assets", response_model=AssetOut)
-def add_asset(asset: AssetCreate, db: Session = Depends(get_db)):
-    # Removed AssetModel.asset_id check since we aren't passing it manually anymore
-    existing = db.query(AssetModel).filter(AssetModel.asset_tag == asset.asset_tag).first()
-    
-    if existing:
-        raise HTTPException(409, "Asset with this barcode already exists")
-
-    new_asset = AssetModel(
-        asset_tag=asset.asset_tag,
-        item_name=asset.item_name,
-        description=asset.description,
-        condition=asset.condition,
-        current_status=asset.current_status,
-        location=asset.location,
-        department_id=asset.department_id,
-        submitted_by=asset.submitted_by,
-    )
-
-    db.add(new_asset)
-    db.commit()
-    db.refresh(new_asset)
-    return new_asset
-
-# (Rest of the endpoints for /assets/{id}, /scan-events, etc. remain the same)
-@app.get("/assets/{asset_id}", response_model=AssetOut)
-def get_asset(asset_id: int, db: Session = Depends(get_db)):
-    asset = db.get(AssetModel, asset_id)
-    if not asset:
-        raise HTTPException(404, "Asset not found")
-    return asset
-
-@app.put("/assets/{asset_id}/status", response_model=AssetOut)
-def update_status(asset_id: int, status_update: StatusUpdate, db: Session = Depends(get_db)):
-    asset = db.get(AssetModel, asset_id)
-    if not asset:
-        raise HTTPException(404, "Asset not found")
-
-    asset.current_status = status_update.current_status
-    db.commit()
-    db.refresh(asset)
-    return asset
-
-@app.get("/assets/by-tag/{asset_tag}", response_model=AssetOut)
-def get_by_tag(asset_tag: str, db: Session = Depends(get_db)):
-    asset = db.query(AssetModel).filter(AssetModel.asset_tag == asset_tag).first()
-    if not asset:
-        raise HTTPException(404, "Asset not found")
-    return asset
-
-@app.get("/users", response_model=list[UserOut])
-def get_users(db: Session = Depends(get_db)):
-    return db.query(UserModel).all()
+@app.post("/generate-description")
+async def generate_description(req: AIDescriptionRequest):
+    if not os.getenv("GEMINI_API_KEY"):
+        raise HTTPException(status_code=500, detail="API Key not configured")
+    try:
+        prompt = f"Rewrite into a 1-sentence inventory description: {req.item_name}, condition {req.condition}."
+        response = model.generate_content(prompt)
+        return {"description": response.text.strip()}
+    except Exception:
+        raise HTTPException(status_code=500, detail="Generation failed")
 
 if __name__ == "__main__":
     import uvicorn
