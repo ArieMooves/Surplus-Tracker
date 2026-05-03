@@ -3,10 +3,6 @@ import useSWR from 'swr';
 import Layout from "../../components/Layout";
 import { ShoppingCart, Globe, AlertCircle } from 'lucide-react';
 
-/**
- * Fetcher function for SWR. 
- * Handles the standard fetch and throws error for non-200 responses.
- */
 const fetcher = (url) => fetch(url).then((res) => {
   if (!res.ok) throw new Error(`Server Error: ${res.status}`);
   return res.json();
@@ -15,15 +11,11 @@ const fetcher = (url) => fetch(url).then((res) => {
 export default function MarketDashboard() {
   // SWR automatically handles loading, error, and caching
   const { data, error, isLoading } = useSWR('/api/market', fetcher, {
-    refreshInterval: 60000, // Optional: refresh data every minute
+    refreshInterval: 60000, // refresh data every minute
     revalidateOnFocus: true, // Refresh when user clicks back into the tab
     fallbackData: []         // Ensures marketList calculation doesn't crash on mount
   });
 
-  /**
-   * Logic to ensure we always have exactly 25 cards.
-   * Fills with placeholders if the API returns fewer than 25 items.
-   */
   const marketList = (() => {
     const apiData = Array.isArray(data) ? data : [];
     if (apiData.length < 25) {
@@ -41,14 +33,15 @@ export default function MarketDashboard() {
 
   return (
     <Layout>
-      {/* Header Section */}
-      <div className="mb-10 flex justify-between items-end">
+      
+      <div className="mb-8 flex justify-between items-end">
         <div>
-          <h1 className="text-4xl font-black text-brand-maroon uppercase italic tracking-tight">
+          <h1 className="text-3xl font-black text-brand-maroon italic tracking-tighter flex items-center gap-3 uppercase">
+            <ShoppingCart size={32} className="text-brand-gold" />
             Market Intelligence
           </h1>
-          <p className="text-slate-400 font-bold text-xs tracking-[0.3em] mt-1">
-            MSU SURPLUS LIVE VALUATION
+          <p className="text-slate-500 font-medium">
+            Live valuation analysis for the MSU Surplus Division
           </p>
         </div>
         <div className="bg-brand-gold/10 px-4 py-2 rounded-full border border-brand-gold/20">
@@ -109,10 +102,7 @@ export default function MarketDashboard() {
   );
 }
 
-/**
- * Reusable Price Component
- * Handles formatting and missing data internally.
- */
+
 function PriceBox({ label, price, highlight, icon }) {
   return (
     <div className={`w-20 p-2 rounded-xl text-center border transition-colors ${
