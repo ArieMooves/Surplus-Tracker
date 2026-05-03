@@ -1,45 +1,43 @@
 "use client";
-import { useEffect, useState } from 'react';
+import useSWR from 'swr';
 import Layout from "../../components/Layout";
 import { ShoppingCart, Globe, AlertCircle } from 'lucide-react';
 
-export default function MarketDashboard() {
-  const [marketList, setMarketList] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+/**
+ * Fetcher function for SWR. 
+ * Handles the standard fetch and throws error for non-200 responses.
+ */
+const fetcher = (url) => fetch(url).then((res) => {
+  if (!res.ok) throw new Error(`Server Error: ${res.status}`);
+  return res.json();
+});
 
-  useEffect(() => {
-    fetch('/api/market')
-      .then(res => {
-        if (!res.ok) throw new Error(`Server Error: ${res.status}`);
-        return res.json();
-      })
-      .then(data => {
-        // Validate that we received an array
-        if (Array.isArray(data)) {
-          // Fallback Logic: Ensure we always show exactly 25 items
-          if (data.length < 25) {
-            const placeholdersNeeded = 25 - data.length;
-            const placeholders = Array.from({ length: placeholdersNeeded }, (_, i) => ({
-              id: `placeholder-${i}`,
-              name: "Awaiting Inventory...",
-              cond: "N/A",
-              prices: { msu: 0, ebay: null, amazon: null }
-            }));
-            setMarketList([...data, ...placeholders]);
-          } else {
-            setMarketList(data.slice(0, 25));
-          }
-        } else {
-          throw new Error("Invalid data format received from server");
-        }
-      })
-      .catch(err => {
-        console.error("Market Fetch Error:", err);
-        setError(err.message);
-      })
-      .finally(() => setLoading(false));
-  }, []);
+export default function MarketDashboard() {
+  // SWR automatically handles loading, error, and caching
+  const { data, error, isLoading } = useSWR('/api/market', fetcher, {
+    refreshInterval: 60000, // Optional: refresh data every minute
+    revalidateOnFocus: true, // Refresh when user clicks back into the tab
+    fallbackData: []         // Ensures marketList calculation doesn't crash on mount
+  });
+
+  /**
+   * Logic to ensure we always have exactly 25 cards.
+   * Fills with placeholders if the API returns fewer than 25 items.
+   */
+  const marketList = (() => {
+    const apiData = Array.isArray(data) ? data : [];
+    if (apiData.length < 25) {
+      const placeholdersNeeded = 25 - apiData.length;
+      const placeholders = Array.from({ length: placeholdersNeeded }, (_, i) => ({
+        id: `placeholder-${i}`,
+        name: "Awaiting Inventory...",
+        cond: "N/A",
+        prices: { msu: 0, ebay: null, amazon: null }
+      }));
+      return [...apiData, ...placeholders];
+    }
+    return apiData.slice(0, 25);
+  })();
 
   return (
     <Layout>
@@ -60,19 +58,12 @@ export default function MarketDashboard() {
         </div>
       </div>
 
-      {/* Main Content Area */}
-      {loading ? (
-        <div className="flex flex-col items-center justify-center p-20 space-y-4">
-          <div className="w-12 h-12 border-4 border-brand-maroon border-t-transparent rounded-full animate-spin"></div>
-          <p className="font-black text-brand-maroon uppercase tracking-widest text-sm">
-            Aggregating Market Points...
-          </p>
-        </div>
-      ) : error ? (
+      {/* Main Grid Logic */}
+      {error ? (
         <div className="flex flex-col items-center justify-center p-20 bg-red-50 rounded-3xl border border-red-100 text-red-600">
           <AlertCircle size={40} className="mb-4" />
-          <p className="font-black uppercase tracking-widest">Analysis Failed</p>
-          <p className="text-xs mt-2 opacity-70">{error}</p>
+          <p className="font-black uppercase tracking-widest">Feed Connection Error</p>
+          <p className="text-xs mt-2 opacity-70">{error.message}</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
@@ -82,11 +73,11 @@ export default function MarketDashboard() {
             return (
               <div 
                 key={item.id} 
-                className={`bg-white rounded-2xl p-5 shadow-sm border border-slate-100 flex items-center gap-6 hover:shadow-md transition-shadow ${
-                  isPlaceholder ? 'opacity-50 grayscale-[0.5]' : ''
-                }`}
+                className={`bg-white rounded-2xl p-5 shadow-sm border border-slate-100 flex items-center gap-6 hover:shadow-md transition-all ${
+                  isPlaceholder ? 'opacity-40 grayscale' : 'opacity-100'
+                } ${isLoading && !isPlaceholder ? 'animate-pulse' : ''}`}
               >
-                {/* Item Info */}
+                {/* Item Details */}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
                     <span className="text-[10px] font-black text-slate-300">
@@ -98,12 +89,12 @@ export default function MarketDashboard() {
                       {item.cond}
                     </span>
                   </div>
-                  <h3 className="text-md font-black text-brand-maroon truncate uppercase">
+                  <h3 className="text-md font-black text-brand-maroon truncate uppercase leading-tight">
                     {item.name}
                   </h3>
                 </div>
 
-                {/* Price Grid */}
+                {/* Price Comparisons */}
                 <div className="flex gap-2">
                   <PriceBox label="MSU" price={item.prices?.msu} highlight />
                   <PriceBox label="eBay" price={item.prices?.ebay} icon={<Globe size={10}/>} />
@@ -119,8 +110,8 @@ export default function MarketDashboard() {
 }
 
 /**
- * PriceBox Component
- * Handles formatting and missing data internally to keep main loop clean.
+ * Reusable Price Component
+ * Handles formatting and missing data internally.
  */
 function PriceBox({ label, price, highlight, icon }) {
   return (
