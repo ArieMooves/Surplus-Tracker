@@ -5,7 +5,7 @@ import Link from 'next/link';
 import Layout from "../../components/Layout";
 import BackButton from "../../components/BackButton";
 import { getAssets, updateAssetStatus } from "../../lib/api"; 
-import { Search, X, Edit3, Save, BarChart2 } from 'lucide-react';
+import { Search, X, Edit3, Save, BarChart2, PackageSearch } from 'lucide-react';
 
 export default function InventoryPage() {
   const [assets, setAssets] = useState([]);
@@ -53,11 +53,16 @@ export default function InventoryPage() {
     <Layout>
       <BackButton />
       
-      {/* Header & Search Section */}
-      <div className="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      
+      <div className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-brand-maroon uppercase tracking-tight">Asset Inventory</h1>
-          <p className="text-slate-500 text-sm">Managing {filteredAssets.length} items</p>
+          <h1 className="text-3xl font-black text-brand-maroon italic tracking-tighter flex items-center gap-3 uppercase">
+            <PackageSearch size={32} className="text-brand-gold" />
+            Asset Inventory
+          </h1>
+          <p className="text-slate-500 font-medium">
+            Managing {filteredAssets.length} items across the MSU Surplus registry
+          </p>
         </div>
 
         <div className="relative max-w-sm w-full">
@@ -160,9 +165,7 @@ export default function InventoryPage() {
               </div>
             </div>
 
-            {/* MODAL FOOTER WITH MARKET LINK */}
             <div className="p-6 bg-slate-50 border-t border-slate-100 flex flex-col gap-3">
-              {/* Dynamic Market Analysis Link */}
               <Link 
                 href="/market"
                 className="w-full bg-brand-gold text-brand-maroon font-black py-4 rounded-xl hover:bg-yellow-500 transition-all flex items-center justify-center gap-2 shadow-md uppercase tracking-widest text-xs"
