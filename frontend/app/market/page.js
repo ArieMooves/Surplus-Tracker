@@ -1,17 +1,34 @@
 "use client";
 import { useEffect, useState } from 'react';
 import Layout from "../../components/Layout";
-import { BarChart2, ShoppingCart, Globe, Tag } from 'lucide-react';
+import { BarChart2, ShoppingCart, Globe, Tag, AlertCircle } from 'lucide-react'; // Added AlertCircle
 
 export default function MarketDashboard() {
+  // Initialize as empty array to prevent undefined errors
   const [marketList, setMarketList] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null); 
 
   useEffect(() => {
     fetch('/api/market')
-      .then(res => res.json())
+      .then(res => {
+        if (!res.ok) throw new Error(`Server Error: ${res.status}`);
+        return res.json();
+      })
       .then(data => {
-        setMarketList(data);
+        // Validation: Ensure data is an array before setting state
+        if (Array.isArray(data)) {
+          setMarketList(data);
+        } else {
+          console.error("API returned object instead of array:", data);
+          setError("Received invalid data format from server.");
+          setMarketList([]); 
+        }
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error("Fetch error:", err);
+        setError(err.message);
         setLoading(false);
       });
   }, []);
@@ -33,14 +50,21 @@ export default function MarketDashboard() {
       {loading ? (
         <div className="flex flex-col items-center justify-center p-20 space-y-4">
           <div className="w-12 h-12 border-4 border-brand-maroon border-t-transparent rounded-full animate-spin"></div>
-          <p className="font-black text-brand-maroon uppercase tracking-widest text-sm">Aggregating 25 Market Points...</p>
+          <p className="font-black text-brand-maroon uppercase tracking-widest text-sm">Aggregating Market Points...</p>
+        </div>
+      ) : error ? (
+        /* Error State UI */
+        <div className="flex flex-col items-center justify-center p-20 bg-red-50 rounded-3xl border border-red-100 text-red-600">
+          <AlertCircle size={40} className="mb-4" />
+          <p className="font-black uppercase tracking-widest">Analysis Failed</p>
+          <p className="text-xs mt-2 opacity-70">{error}</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-          {marketList.map((item) => (
+          {/* Added Optional Chaining as double-safety */}
+          {marketList?.map((item) => (
             <div key={item.id} className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 flex items-center gap-6 hover:shadow-md transition-shadow">
               
-              {/* Item Info */}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
                   <span className="text-[10px] font-black text-slate-300">#{item.id}</span>
@@ -51,11 +75,11 @@ export default function MarketDashboard() {
                 <h3 className="text-md font-black text-brand-maroon truncate uppercase">{item.name}</h3>
               </div>
 
-              {/* Price Grid */}
               <div className="flex gap-2">
-                <PriceBox label="MSU" price={item.prices.msu} highlight />
-                <PriceBox label="eBay" price={item.prices.ebay} icon={<Globe size={10}/>} />
-                <PriceBox label="Amazon" price={item.prices.amazon} icon={<ShoppingCart size={10}/>} />
+                {/* Use optional chaining for price access */}
+                <PriceBox label="MSU" price={item.prices?.msu} highlight />
+                <PriceBox label="eBay" price={item.prices?.ebay} icon={<Globe size={10}/>} />
+                <PriceBox label="Amazon" price={item.prices?.amazon} icon={<ShoppingCart size={10}/>} />
               </div>
 
             </div>
@@ -74,7 +98,8 @@ function PriceBox({ label, price, highlight, icon }) {
       <p className={`text-[8px] font-black uppercase mb-1 flex items-center justify-center gap-1 ${highlight ? 'text-brand-gold' : 'text-slate-400'}`}>
         {icon} {label}
       </p>
-      <p className="font-mono font-bold text-xs">${price}</p>
+      {/* Handle potential missing prices gracefully */}
+      <p className="font-mono font-bold text-xs">{price !== undefined ? `$${price}` : 'N/A'}</p>
     </div>
   );
 }
