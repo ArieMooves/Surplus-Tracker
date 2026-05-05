@@ -4,8 +4,8 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Layout from "../../components/Layout";
 import BackButton from "../../components/BackButton";
-import { getAssets, updateAssetStatus } from "../../lib/api"; 
-import { Search, X, Edit3, Save, BarChart2, PackageSearch } from 'lucide-react';
+import { getAssets, updateAssetStatus, claimSurplusAsset } from "../../lib/api"; 
+import { Search, X, Edit3, Save, BarChart2, PackageSearch, Hand metal } from 'lucide-react';
 
 export default function InventoryPage() {
   const [assets, setAssets] = useState([]);
@@ -39,8 +39,8 @@ export default function InventoryPage() {
     setIsSaving(true);
     try {
       await updateAssetStatus(selectedAsset.asset_id, selectedAsset.current_status);
-      await fetchData(); // Refresh list
-      setSelectedAsset(null); // Close modal
+      await fetchData(); 
+      setSelectedAsset(null); 
       alert("Asset updated successfully!");
     } catch (err) {
       alert("Failed to update asset.");
@@ -49,10 +49,34 @@ export default function InventoryPage() {
     }
   };
 
+  /**
+   
+   * Triggered when a department wants to claim a surplus item.
+   */
+  const handleClaim = async () => {
+    if (!selectedAsset) return;
+    
+    const confirmClaim = confirm(`Redistribute ${selectedAsset.item_name} to your department?`);
+    if (!confirmClaim) return;
+
+    setIsSaving(true);
+    try {
+      
+      // default "Computer Science" department
+      await claimSurplusAsset(selectedAsset.asset_id, "Computer Science");
+      await fetchData();
+      setSelectedAsset(null);
+      alert("Asset successfully redistributed to your department!");
+    } catch (err) {
+      alert("Error claiming asset: " + err.message);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   return (
     <Layout>
       <BackButton />
-      
       
       <div className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
@@ -76,7 +100,6 @@ export default function InventoryPage() {
         </div>
       </div>
 
-      {/* Inventory Table */}
       <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
         <table className="w-full text-left border-collapse">
           <thead className="bg-slate-50 border-b border-slate-200">
@@ -118,7 +141,6 @@ export default function InventoryPage() {
         </table>
       </div>
 
-      {/* ASSET SUMMARY & EDIT MODAL */}
       {selectedAsset && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-brand-maroon/40 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="bg-white w-full max-w-lg rounded-3xl shadow-2xl border-t-8 border-brand-gold overflow-hidden animate-in zoom-in-95 duration-200">
@@ -151,6 +173,7 @@ export default function InventoryPage() {
                 </div>
               </div>
 
+              {/* Status Management */}
               <div>
                 <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Manage Status</label>
                 <select 
@@ -163,6 +186,17 @@ export default function InventoryPage() {
                   <option value="disposed">Disposed</option>
                 </select>
               </div>
+
+              
+              {selectedAsset.current_status === 'surplus' && (
+                <button 
+                  onClick={handleClaim}
+                  disabled={isSaving}
+                  className="w-full bg-green-600 text-white font-black py-4 rounded-xl hover:bg-green-700 transition-all flex items-center justify-center gap-2 shadow-lg uppercase tracking-widest text-xs disabled:opacity-50"
+                >
+                  Claim for My Department
+                </button>
+              )}
             </div>
 
             <div className="p-6 bg-slate-50 border-t border-slate-100 flex flex-col gap-3">
@@ -181,7 +215,7 @@ export default function InventoryPage() {
                   className="flex-1 bg-brand-maroon text-white font-bold py-4 rounded-xl hover:bg-brand-dark transition-all flex items-center justify-center gap-2 shadow-lg disabled:opacity-50"
                 >
                   <Save size={18} />
-                  {isSaving ? "SAVING..." : "UPDATE ASSET"}
+                  {isSaving ? "SAVING..." : "UPDATE STATUS"}
                 </button>
                 <button 
                   onClick={() => setSelectedAsset(null)}
