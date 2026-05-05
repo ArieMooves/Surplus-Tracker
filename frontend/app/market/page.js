@@ -9,31 +9,32 @@ const fetcher = (url) => fetch(url).then((res) => {
 });
 
 export default function MarketDashboard() {
-  // SWR automatically handles loading, error, and caching
   const { data, error, isLoading } = useSWR('/api/market', fetcher, {
-    refreshInterval: 60000, // refresh data every minute
-    revalidateOnFocus: true, // Refresh when user clicks back into the tab
-    fallbackData: []         // Ensures marketList calculation doesn't crash on mount
+    refreshInterval: 60000, 
+    revalidateOnFocus: true,
+    fallbackData: []         
   });
 
+  // Show placeholders only when truly loading/empty
   const marketList = (() => {
-    const apiData = Array.isArray(data) ? data : [];
-    if (apiData.length < 25) {
-      const placeholdersNeeded = 25 - apiData.length;
-      const placeholders = Array.from({ length: placeholdersNeeded }, (_, i) => ({
-        id: `placeholder-${i}`,
-        name: "Awaiting Inventory...",
-        cond: "N/A",
-        prices: { msu: 0, ebay: null, amazon: null }
-      }));
-      return [...apiData, ...placeholders];
+    const apiData = Array.isArray(data) && data.length > 0 ? data : [];
+    
+    // If the API has returned our 25 items, use them
+    if (apiData.length > 0) {
+      return apiData;
     }
-    return apiData.slice(0, 25);
+
+    // Otherwise, generate 25 placeholders for the "Searching..." state
+    return Array.from({ length: 25 }, (_, i) => ({
+      id: `---`,
+      name: "Awaiting Live Market Data...",
+      cond: "SCANNING",
+      prices: { msu: 0, ebay: null, amazon: null }
+    }));
   })();
 
   return (
     <Layout>
-      
       <div className="mb-8 flex justify-between items-end">
         <div>
           <h1 className="text-3xl font-black text-brand-maroon italic tracking-tighter flex items-center gap-3 uppercase">
@@ -44,14 +45,16 @@ export default function MarketDashboard() {
             Live valuation analysis for the MSU Surplus Division
           </p>
         </div>
-        <div className="bg-brand-gold/10 px-4 py-2 rounded-full border border-brand-gold/20">
-          <span className="text-brand-maroon font-black text-xs uppercase tracking-widest animate-pulse">
-            ● Live Analysis Active
+        
+        {/* Visual indicator for the Google Search browsing delay */}
+        <div className="bg-brand-gold/10 px-4 py-2 rounded-full border border-brand-gold/20 flex items-center gap-2">
+          {isLoading && <div className="h-2 w-2 bg-brand-maroon rounded-full animate-ping" />}
+          <span className="text-brand-maroon font-black text-xs uppercase tracking-widest">
+            {isLoading ? "Browsing Web Listings..." : "● Live Analysis Active"}
           </span>
         </div>
       </div>
 
-      {/* Main Grid Logic */}
       {error ? (
         <div className="flex flex-col items-center justify-center p-20 bg-red-50 rounded-3xl border border-red-100 text-red-600">
           <AlertCircle size={40} className="mb-4" />
@@ -60,21 +63,22 @@ export default function MarketDashboard() {
         </div>
       ) : (
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-          {marketList.map((item) => {
-            const isPlaceholder = item.id.toString().includes('placeholder');
+          {marketList.map((item, index) => {
+            // Check if it's a placeholder by ID or by the isLoading state
+            const isPlaceholder = isLoading || item.id === '---';
             
             return (
               <div 
-                key={item.id} 
+                key={item.id === '---' ? `loading-${index}` : item.id} 
                 className={`bg-white rounded-2xl p-5 shadow-sm border border-slate-100 flex items-center gap-6 hover:shadow-md transition-all ${
-                  isPlaceholder ? 'opacity-40 grayscale' : 'opacity-100'
-                } ${isLoading && !isPlaceholder ? 'animate-pulse' : ''}`}
+                  isPlaceholder ? 'opacity-40 grayscale pointer-events-none' : 'opacity-100'
+                } ${isLoading ? 'animate-pulse' : ''}`}
               >
                 {/* Item Details */}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
                     <span className="text-[10px] font-black text-slate-300">
-                      {isPlaceholder ? "#---" : `#${item.id}`}
+                      #{item.id}
                     </span>
                     <span className={`text-[8px] font-black uppercase px-1.5 py-0.5 rounded ${
                       item.cond === 'New' ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-500'
@@ -102,12 +106,11 @@ export default function MarketDashboard() {
   );
 }
 
-
 function PriceBox({ label, price, highlight, icon }) {
   return (
     <div className={`w-20 p-2 rounded-xl text-center border transition-colors ${
       highlight 
-        ? 'bg-brand-maroon border-brand-maroon text-white' 
+        ? 'bg-brand-maroon border-brand-maroon text-white shadow-sm' 
         : 'bg-slate-50 border-slate-100 text-slate-500'
     }`}>
       <p className={`text-[8px] font-black uppercase mb-1 flex items-center justify-center gap-1 ${
@@ -116,7 +119,8 @@ function PriceBox({ label, price, highlight, icon }) {
         {icon} {label}
       </p>
       <p className="font-mono font-bold text-xs">
-        {price !== null && price !== undefined ? `$${price}` : 'N/A'}
+        {/* Ensuring we never show $null or $undefined */}
+        {typeof price === 'number' ? `$${Math.round(price)}` : '---'}
       </p>
     </div>
   );
