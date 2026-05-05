@@ -1,4 +1,3 @@
-
 const getBaseUrl = () => {
   if (typeof window !== "undefined") {
     const hostname = window.location.hostname;
@@ -73,6 +72,26 @@ export async function updateAssetStatus(id, status) {
     return await handleResponse(res);
   } catch (err) {
     console.error("updateAssetStatus failed:", err);
+    throw err;
+  }
+}
+
+/**
+  * Claims a surplus asset for a specific department and resets status to active.
+ */
+export async function claimSurplusAsset(assetId, departmentName) {
+  try {
+    const res = await fetch(`${BASE_URL}/assets/${assetId}/claim`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ 
+        location: departmentName,
+        current_status: "active" 
+      }),
+    });
+    return await handleResponse(res);
+  } catch (err) {
+    console.error(`claimSurplusAsset ${assetId} failed:`, err);
     throw err;
   }
 }
