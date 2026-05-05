@@ -5,7 +5,7 @@ import Link from 'next/link';
 import Layout from "../../components/Layout";
 import BackButton from "../../components/BackButton";
 import { getAssets, updateAssetStatus, claimSurplusAsset } from "../../lib/api"; 
-import { Search, X, Edit3, Save, BarChart2, PackageSearch, Hand metal } from 'lucide-react';
+import { Search, X, Edit3, Save, BarChart2, PackageSearch, ShieldCheck } from 'lucide-react';
 
 export default function InventoryPage() {
   const [assets, setAssets] = useState([]);
@@ -13,6 +13,10 @@ export default function InventoryPage() {
   const [loading, setLoading] = useState(true);
   const [selectedAsset, setSelectedAsset] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
+
+  // ADMIN PROFILE DATA
+  const ADMIN_NAME = "Marcus Mustang";
+  const MUSTANG_ID = "M10357379";
 
   useEffect(() => {
     fetchData();
@@ -41,34 +45,9 @@ export default function InventoryPage() {
       await updateAssetStatus(selectedAsset.asset_id, selectedAsset.current_status);
       await fetchData(); 
       setSelectedAsset(null); 
-      alert("Asset updated successfully!");
+      alert("Status Updated Successfully");
     } catch (err) {
-      alert("Failed to update asset.");
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  /**
-   
-   * Triggered when a department wants to claim a surplus item.
-   */
-  const handleClaim = async () => {
-    if (!selectedAsset) return;
-    
-    const confirmClaim = confirm(`Redistribute ${selectedAsset.item_name} to your department?`);
-    if (!confirmClaim) return;
-
-    setIsSaving(true);
-    try {
-      
-      // default "Computer Science" department
-      await claimSurplusAsset(selectedAsset.asset_id, "Computer Science");
-      await fetchData();
-      setSelectedAsset(null);
-      alert("Asset successfully redistributed to your department!");
-    } catch (err) {
-      alert("Error claiming asset: " + err.message);
+      alert("Update Failed");
     } finally {
       setIsSaving(false);
     }
@@ -78,6 +57,21 @@ export default function InventoryPage() {
     <Layout>
       <BackButton />
       
+      {/* ADMIN IDENTITY BANNER */}
+      <div className="mb-6 flex items-center gap-3 bg-brand-maroon p-4 rounded-2xl border-b-4 border-brand-gold shadow-lg">
+        <div className="bg-white/20 p-2 rounded-full">
+          <ShieldCheck size={20} className="text-brand-gold" />
+        </div>
+        <div>
+          <p className="text-[10px] font-black text-brand-gold uppercase tracking-[0.2em] leading-none mb-1">
+            Authenticated System Administrator
+          </p>
+          <p className="text-white font-bold text-sm">
+            {ADMIN_NAME} <span className="opacity-60 ml-2">ID: {MUSTANG_ID}</span>
+          </p>
+        </div>
+      </div>
+
       <div className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
           <h1 className="text-3xl font-black text-brand-maroon italic tracking-tighter flex items-center gap-3 uppercase">
@@ -85,7 +79,7 @@ export default function InventoryPage() {
             Asset Inventory
           </h1>
           <p className="text-slate-500 font-medium">
-            Managing {filteredAssets.length} items across the MSU Surplus registry
+            Managing {filteredAssets.length} tracked items
           </p>
         </div>
 
@@ -93,8 +87,8 @@ export default function InventoryPage() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
           <input 
             type="text"
-            placeholder="Search by name or tag (e.g. 49561)"
-            className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-brand-gold outline-none transition-all shadow-sm"
+            placeholder="Search Assets..."
+            className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-brand-gold outline-none shadow-sm"
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
@@ -104,15 +98,14 @@ export default function InventoryPage() {
         <table className="w-full text-left border-collapse">
           <thead className="bg-slate-50 border-b border-slate-200">
             <tr>
-              <th className="p-4 font-bold text-slate-600 text-xs uppercase">Tag</th>
+              <th className="p-4 font-bold text-slate-600 text-xs uppercase">Asset Tag</th>
               <th className="p-4 font-bold text-slate-600 text-xs uppercase">Item Name</th>
-              <th className="p-4 font-bold text-slate-600 text-xs uppercase">Condition</th>
               <th className="p-4 font-bold text-slate-600 text-xs uppercase">Status</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
             {loading ? (
-              <tr><td colSpan="4" className="p-12 text-center text-slate-400 animate-pulse">Fetching MSU Assets...</td></tr>
+              <tr><td colSpan="3" className="p-12 text-center animate-pulse">Accessing Registry...</td></tr>
             ) : filteredAssets.map((asset) => (
               <tr 
                 key={asset.asset_id} 
@@ -120,12 +113,7 @@ export default function InventoryPage() {
                 className="hover:bg-brand-gold/5 transition-colors group cursor-pointer"
               >
                 <td className="p-4 font-mono text-sm text-brand-maroon font-bold">{asset.asset_tag}</td>
-                <td className="p-4 text-slate-700 font-medium">{asset.item_name}</td>
-                <td className="p-4">
-                  <span className="px-2 py-1 rounded bg-slate-100 text-[10px] font-bold text-slate-500 uppercase">
-                    {asset.condition}
-                  </span>
-                </td>
+                <td className="p-4 text-slate-700 font-medium uppercase text-xs">{asset.item_name}</td>
                 <td className="p-4">
                   <span className={`px-2 py-1 rounded-full text-[10px] font-black uppercase tracking-tighter ${
                     asset.current_status === 'active' ? 'bg-green-100 text-green-700' : 
@@ -142,14 +130,14 @@ export default function InventoryPage() {
       </div>
 
       {selectedAsset && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-brand-maroon/40 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-white w-full max-w-lg rounded-3xl shadow-2xl border-t-8 border-brand-gold overflow-hidden animate-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-brand-maroon/40 backdrop-blur-sm">
+          <div className="bg-white w-full max-w-lg rounded-3xl shadow-2xl border-t-8 border-brand-gold overflow-hidden">
             <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
               <h2 className="text-xl font-black text-brand-maroon italic tracking-tighter flex items-center gap-2">
                 <Edit3 size={20} className="text-brand-gold" />
-                ASSET SUMMARY
+                ADMIN CONTROL PANEL
               </h2>
-              <button onClick={() => setSelectedAsset(null)} className="text-slate-400 hover:text-brand-maroon transition-colors">
+              <button onClick={() => setSelectedAsset(null)} className="text-slate-400">
                 <X size={24} />
               </button>
             </div>
@@ -157,73 +145,59 @@ export default function InventoryPage() {
             <div className="p-8 space-y-6">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">Asset Tag</label>
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Asset Tag</label>
                   <p className="text-lg font-mono font-bold text-brand-maroon">{selectedAsset.asset_tag}</p>
                 </div>
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">Condition</label>
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Condition</label>
                   <p className="text-md font-bold text-slate-700">{selectedAsset.condition}</p>
                 </div>
               </div>
 
-              <div>
-                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Item Description</label>
-                <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 text-sm text-slate-600 leading-relaxed italic">
-                  {selectedAsset.description || "No description provided for this MSU asset."}
+              {/* ADMIN APPROVAL BOX */}
+              {selectedAsset.current_status === 'surplus' && (
+                <div className="p-4 bg-blue-50 border-2 border-dashed border-blue-200 rounded-2xl">
+                  <p className="text-[9px] font-black text-blue-600 uppercase mb-2 text-center">
+                    Authorized Approval Required
+                  </p>
+                  <button 
+                    onClick={handleSaveStatus}
+                    className="w-full bg-blue-600 text-white font-black py-3 rounded-xl hover:bg-blue-700 transition-all uppercase text-xs tracking-widest shadow-md"
+                  >
+                    Approve Redistribution
+                  </button>
                 </div>
-              </div>
+              )}
 
-              {/* Status Management */}
               <div>
-                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Manage Status</label>
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 block">Set System Status</label>
                 <select 
                   value={selectedAsset.current_status}
                   onChange={(e) => setSelectedAsset({...selectedAsset, current_status: e.target.value})}
-                  className="w-full p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-brand-gold outline-none font-bold text-brand-maroon uppercase text-xs tracking-wider"
+                  className="w-full p-3 border border-slate-300 rounded-xl font-bold text-brand-maroon uppercase text-xs"
                 >
                   <option value="active">Active</option>
                   <option value="surplus">Surplus</option>
                   <option value="disposed">Disposed</option>
                 </select>
               </div>
-
-              
-              {selectedAsset.current_status === 'surplus' && (
-                <button 
-                  onClick={handleClaim}
-                  disabled={isSaving}
-                  className="w-full bg-green-600 text-white font-black py-4 rounded-xl hover:bg-green-700 transition-all flex items-center justify-center gap-2 shadow-lg uppercase tracking-widest text-xs disabled:opacity-50"
-                >
-                  Claim for My Department
-                </button>
-              )}
             </div>
 
             <div className="p-6 bg-slate-50 border-t border-slate-100 flex flex-col gap-3">
-              <Link 
-                href="/market"
-                className="w-full bg-brand-gold text-brand-maroon font-black py-4 rounded-xl hover:bg-yellow-500 transition-all flex items-center justify-center gap-2 shadow-md uppercase tracking-widest text-xs"
+              <button 
+                onClick={handleSaveStatus}
+                disabled={isSaving}
+                className="w-full bg-brand-maroon text-white font-bold py-4 rounded-xl hover:bg-brand-dark transition-all flex items-center justify-center gap-2 shadow-lg disabled:opacity-50"
               >
-                <BarChart2 size={18} />
-                View Market Analysis
-              </Link>
-
-              <div className="flex gap-3">
-                <button 
-                  onClick={handleSaveStatus}
-                  disabled={isSaving}
-                  className="flex-1 bg-brand-maroon text-white font-bold py-4 rounded-xl hover:bg-brand-dark transition-all flex items-center justify-center gap-2 shadow-lg disabled:opacity-50"
-                >
-                  <Save size={18} />
-                  {isSaving ? "SAVING..." : "UPDATE STATUS"}
-                </button>
-                <button 
-                  onClick={() => setSelectedAsset(null)}
-                  className="flex-1 border-2 border-slate-200 text-slate-500 font-bold py-4 rounded-xl hover:bg-slate-100 transition-all"
-                >
-                  CANCEL
-                </button>
-              </div>
+                <Save size={18} />
+                {isSaving ? "EXECUTING..." : "COMMIT CHANGES"}
+              </button>
+              <button 
+                onClick={() => setSelectedAsset(null)}
+                className="w-full border-2 border-slate-200 text-slate-500 font-bold py-4 rounded-xl"
+              >
+                CLOSE
+              </button>
             </div>
           </div>
         </div>
