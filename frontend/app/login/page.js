@@ -38,7 +38,7 @@ export default function Login() {
             <ShieldCheck size={32} className="text-brand-maroon" />
           </div>
           <h1 className="text-4xl font-black text-brand-maroon italic tracking-tighter uppercase">
-            MSU <span className="text-brand-gold">Surplus</span>
+            MSU <span className="text-brand-gold">Surplus</span> <span className="text-[10px] font-bold uppercase tracking-widest ml-1 opacity-60">Tracker</span>
           </h1>
           <p className="text-slate-400 uppercase tracking-[0.2em] text-[10px] font-black mt-2">
             Centralized Asset Registry
