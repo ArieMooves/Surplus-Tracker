@@ -11,7 +11,8 @@ import {
   ShoppingCart,
   Settings, 
   LogOut,
-  PlusCircle
+  PlusCircle,
+  UserCheck 
 } from 'lucide-react';
 
 export default function Layout({ children }) {
@@ -19,6 +20,7 @@ export default function Layout({ children }) {
   const pathname = usePathname();
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const [currentTime, setCurrentTime] = useState("");
+  const [user, setUser] = useState(null); // state to hold Marcus's data
 
   // Update dynamic date/time
   useEffect(() => {
@@ -33,11 +35,13 @@ export default function Layout({ children }) {
     updateTime();
   }, []);
 
+  // Authentication and Identity Check
   useEffect(() => {
-    const user = localStorage.getItem('msu_user');
-    if (!user) {
+    const storedUser = localStorage.getItem('msu_user');
+    if (!storedUser) {
       router.push('/login'); 
     } else {
+      setUser(JSON.parse(storedUser)); // Set Marcus's data into state
       setIsCheckingAuth(false);
     }
   }, [router]);
@@ -117,8 +121,26 @@ export default function Layout({ children }) {
           <h2 className="font-bold text-brand-maroon uppercase tracking-tight">
             {menuItems.find(i => i.href === pathname)?.name || "System Overview"}
           </h2>
-          <div className="flex items-center gap-4">
-             <span className="text-xs font-bold text-brand-maroon bg-brand-gold/20 px-4 py-1.5 rounded-full uppercase tracking-widest">
+          
+          {/* UPDATED HEADER: Marcus Mustang Identity Section */}
+          <div className="flex items-center gap-6">
+             {user && (
+               <div className="hidden md:flex flex-col items-end border-r pr-6 border-slate-100">
+                 <p className="text-[9px] font-black text-brand-maroon uppercase tracking-widest leading-none mb-1">
+                   {user.role}
+                 </p>
+                 <div className="flex items-center gap-2">
+                   <span className="text-xs font-black text-slate-700 uppercase tracking-tighter">
+                     {user.name} 
+                   </span>
+                   <span className="text-[10px] font-bold text-slate-400">
+                     ({user.id})
+                   </span>
+                 </div>
+               </div>
+             )}
+
+             <span className="text-xs font-bold text-brand-maroon bg-brand-gold/20 px-4 py-1.5 rounded-full uppercase tracking-widest shadow-sm">
                 {currentTime || "Loading Date..."}
              </span>
           </div>
@@ -138,7 +160,7 @@ export default function Layout({ children }) {
                   MSU
                 </div>
                 <div className="text-brand-maroon/40 text-[10px] uppercase tracking-[0.3em] font-bold">
-                  Verifying...
+                  Verifying Credentials...
                 </div>
               </motion.div>
             ) : (
