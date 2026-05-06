@@ -1,25 +1,33 @@
 {
-  "name": "surplus-tracker",
+  "name": "msu-surplus-tracker-frontend",
   "version": "1.0.0",
-  "description": "by Aretha Fontaine and Harika Vemulapalli",
+  "description": "MSU Surplus Tracker - by Aretha Fontaine and Harika Vemulapalli",
   "main": "index.js",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "lint": "next lint"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/ArieMooves/Surplus-Tracker.git"
   },
-  "keywords": [],
-  "author": "",
+  "author": "Aretha Fontaine, Harika Vemulapalli",
   "license": "ISC",
   "dependencies": {
+    "@google/generative-ai": "^0.24.1",
+    "framer-motion": "^11.0.0",
+    "html5-qrcode": "^2.3.8",
+    "lucide-react": "^0.344.0",
     "next": "^13.5.3",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.4.49",
+    "tailwindcss": "^3.4.1"
   },
   "bugs": {
     "url": "https://github.com/ArieMooves/Surplus-Tracker/issues"
