@@ -12,7 +12,7 @@ import {
   Settings, 
   LogOut,
   PlusCircle,
-  UserCheck 
+  ShieldCheck 
 } from 'lucide-react';
 
 export default function Layout({ children }) {
@@ -20,7 +20,7 @@ export default function Layout({ children }) {
   const pathname = usePathname();
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const [currentTime, setCurrentTime] = useState("");
-  const [user, setUser] = useState(null); // state to hold Marcus's data
+  const [user, setUser] = useState(null);
 
   // Update dynamic date/time
   useEffect(() => {
@@ -41,7 +41,7 @@ export default function Layout({ children }) {
     if (!storedUser) {
       router.push('/login'); 
     } else {
-      setUser(JSON.parse(storedUser)); // Set Marcus's data into state
+      setUser(JSON.parse(storedUser));
       setIsCheckingAuth(false);
     }
   }, [router]);
@@ -62,7 +62,9 @@ export default function Layout({ children }) {
   ];
 
   return (
-    <div className="flex h-screen w-full bg-background overflow-hidden">
+    
+    <div className="flex h-screen w-full bg-background overflow-hidden pt-10">
+      
       {/* SIDEBAR */}
       <aside className="w-64 bg-brand-maroon text-white flex flex-col shadow-2xl z-20">
         <div className="p-6 text-brand-gold text-2xl font-black border-b border-brand-dark italic tracking-tighter">
@@ -122,7 +124,7 @@ export default function Layout({ children }) {
             {menuItems.find(i => i.href === pathname)?.name || "System Overview"}
           </h2>
           
-          {/* UPDATED HEADER: Marcus Mustang Identity Section */}
+          {/* Identity Section */}
           <div className="flex items-center gap-6">
              {user && (
                <div className="hidden md:flex flex-col items-end border-r pr-6 border-slate-100">
