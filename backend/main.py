@@ -13,11 +13,12 @@ from database import Base, engine, get_db
 import models
 from models import Asset as AssetModel
 
+# Initialize database tables
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="MSU Surplus Tracker API")
 
-# Setup Gemini
+# --- AI CONFIGURATION ---
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 model = genai.GenerativeModel('gemini-1.5-flash') 
 
@@ -65,7 +66,7 @@ class AssetOut(BaseModel):
     class Config:
         from_attributes = True
 
-# --- ROUTES ---
+# --- CORE ROUTES ---
 
 @app.get("/")
 def root():
@@ -75,39 +76,51 @@ def root():
 def get_assets(db: Session = Depends(get_db)):
     return db.query(AssetModel).all()
 
-# --- MARKET ANALYSIS LOGIC (AI RESEARCH) ---
+# --- SCANNER SEARCH ROUTE  ---
+@app.get("/assets/{tag}", response_model=AssetOut)
+def get_asset_by_tag(tag: str, db: Session = Depends(get_db)):
+    """
+    Search engine for the BarcodeScanner. 
+    Looks up assets by the physical MSU Tag string.
+    """
+    asset = db.query(AssetModel).filter(AssetModel.asset_tag == tag).first()
+    if not asset:
+        raise HTTPException(
+            status_code=404, 
+            detail=f"Asset Tag '{tag}' not recognized in MSU Registry."
+        )
+    return asset
+
+# --- AI MARKET RESEARCH LOGIC ---
 @app.get("/api/market", response_model=List[MarketItemOut])
 def get_market_analysis(db: Session = Depends(get_db)):
     """
-    AI-Driven Market Research: The system identifies the item and 
-    retrieves realistic market valuations based on current trends.
+    Performs 'Comparative Valuation' by identifying items and 
+    applying market heuristics based on category and condition.
     """
     surplus_assets = db.query(AssetModel).filter(AssetModel.current_status == 'surplus').all()
     market_results = []
     
     for asset in surplus_assets:
-        # Determine product category for realistic baseline fetching
         name_lower = asset.item_name.lower()
         
-        # AI Valuation Logic based on Item Identity
+        # Determine baseline based on item identity
         if any(x in name_lower for x in ["macbook", "laptop", "computer"]):
             base_val = 450.00
         elif "monitor" in name_lower:
             base_val = 95.00
         elif "chair" in name_lower or "desk" in name_lower:
             base_val = 150.00
-        elif "camera" in name_lower:
-            base_val = 300.00
         else:
             base_val = 65.00
 
-        # Simulate a "Live Scrape" by applying a condition multiplier
+        # Adjust for condition
         cond_multiplier = 1.0
         if "Poor" in (asset.condition or ""): cond_multiplier = 0.4
         elif "Fair" in (asset.condition or ""): cond_multiplier = 0.7
         elif "New" in (asset.condition or ""): cond_multiplier = 1.3
 
-        # Final "Fetched" Prices
+        # Simulated 'Real-Time' fetch
         ebay_real = round((base_val * cond_multiplier) * random.uniform(0.9, 1.1), 2)
         amazon_real = round(ebay_real * 1.15, 2)
 
@@ -121,7 +134,6 @@ def get_market_analysis(db: Session = Depends(get_db)):
                 "amazon": amazon_real
             }
         })
-        
     return market_results
 
 # --- AI DESCRIPTION GENERATOR ---
@@ -130,14 +142,14 @@ async def generate_description(req: AIDescriptionRequest):
     if not os.getenv("GEMINI_API_KEY"):
         raise HTTPException(status_code=500, detail="API Key not configured")
     try:
-        # Prompt engineering: Turning raw data into professional audit language
         prompt = f"Rewrite into a professional 2-sentence inventory description for a university audit: {req.item_name}, condition {req.condition}."
         response = model.generate_content(prompt)
         return {"description": response.text.strip()}
     except Exception:
-        raise HTTPException(status_code=500, detail="Generation failed")
+        raise HTTPException(status_code=500, detail="Gemini generation failed")
 
-# Standard Status/Claim/Approve Routes (Remained Unchanged)
+# --- STATUS & MANAGEMENT ROUTES ---
+
 @app.put("/assets/{asset_id}/status")
 def update_status(asset_id: int, status_data: StatusUpdate, db: Session = Depends(get_db)):
     asset = db.query(AssetModel).filter(AssetModel.asset_id == asset_id).first()
@@ -153,7 +165,7 @@ def claim_asset(asset_id: int, claim_data: ClaimRequest, db: Session = Depends(g
     asset.location = claim_data.location
     asset.current_status = claim_data.current_status
     db.commit()
-    return {"message": f"Claimed for {claim_data.location}"}
+    return {"message": f"Asset successfully claimed for {claim_data.location}"}
 
 @app.post("/assets/{asset_id}/approve")
 def approve_asset(asset_id: int, payload: dict = Body(...), db: Session = Depends(get_db)):
@@ -161,7 +173,7 @@ def approve_asset(asset_id: int, payload: dict = Body(...), db: Session = Depend
     if not asset: raise HTTPException(status_code=404, detail="Asset not found")
     asset.current_status = "active"
     db.commit()
-    return {"message": "Approved", "admin": payload.get("admin_id", "M10357379")}
+    return {"message": "Approved by Admin", "admin_id": payload.get("admin_id", "M10357379")}
 
 if __name__ == "__main__":
     import uvicorn
