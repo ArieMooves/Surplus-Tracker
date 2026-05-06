@@ -3,7 +3,7 @@ import { useEffect, useState } from "react"
 import { getAssets } from "../lib/api"
 import Layout from "../components/Layout"
 import Link from "next/link"
-import { LayoutDashboard, Plus, Package, ShieldCheck, PieChart, Trash2 } from 'lucide-react'
+import { LayoutDashboard, Plus, Package, ShieldCheck, PieChart, Trash2, MapPin, Info } from 'lucide-react'
 
 export default function Home() {
   const [assets, setAssets] = useState([])
@@ -33,7 +33,7 @@ export default function Home() {
 
   return (
     <Layout>
-      
+      {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 gap-4">
         <div>
           <h1 className="text-3xl font-black text-brand-maroon italic tracking-tighter flex items-center gap-3 uppercase">
@@ -41,7 +41,7 @@ export default function Home() {
             System Overview
           </h1>
           <p className="text-slate-500 font-medium">
-            Monitor and manage MSU asset lifecycles in real-time.
+            Real-time management of the MSU Surplus Registry.
           </p>
         </div>
 
@@ -53,7 +53,7 @@ export default function Home() {
         </Link>
       </div>
 
-  
+      {/* Stats Section */}
       {!loading && !error && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
           <StatCard title="Total Assets" value={totalAssets} icon={<Package size={24}/>} color="bg-slate-800" />
@@ -63,34 +63,34 @@ export default function Home() {
         </div>
       )}
 
-      {/* CONTENT STATES */}
+      <div className="mb-6">
+        <h2 className="text-sm font-black text-slate-400 uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
+          <Info size={14} />
+          Recently Synced Inventory
+        </h2>
+      </div>
+
+      {/* Assets Grid */}
       {loading ? (
         <div className="flex flex-col items-center justify-center py-20">
           <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-brand-maroon"></div>
-          <p className="text-slate-500 mt-4 font-bold uppercase tracking-widest text-xs">Loading MSU Database...</p>
+          <p className="text-slate-500 mt-4 font-bold uppercase tracking-widest text-[10px]">Accessing Database...</p>
         </div>
       ) : error ? (
         <div className="bg-red-50 border-2 border-red-100 text-red-700 px-6 py-8 rounded-3xl text-center">
           <p className="font-black uppercase tracking-tight">{error}</p>
-          <button onClick={loadAssets} className="mt-2 text-sm font-bold underline hover:text-red-800">Try again</button>
-        </div>
-      ) : assets.length === 0 ? (
-        <div className="bg-slate-50 border-2 border-dashed border-slate-200 rounded-3xl py-20 text-center">
-          <p className="text-slate-400 font-bold uppercase tracking-widest text-sm">No assets registered in the system.</p>
-          <Link href="/add" className="text-brand-maroon font-black hover:underline mt-4 inline-block uppercase text-xs">
-            Register your first asset →
-          </Link>
+          <button onClick={loadAssets} className="mt-2 text-sm font-bold underline">Try again</button>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {assets.map((asset) => (
+          {assets.slice(0, 9).map((asset) => (
             <div
               key={asset.asset_id}
-              className="group bg-white border border-slate-200 rounded-3xl p-6 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
+              className="group bg-white border border-slate-200 rounded-3xl p-6 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col"
             >
               <div className="flex justify-between items-start mb-4">
                 <div className="bg-slate-100 text-slate-400 text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded">
-                  TAG: {asset.asset_tag || asset.asset_id}
+                  TAG: {asset.asset_tag}
                 </div>
                 <span
                   className={`px-3 py-1 text-[10px] font-black rounded-full uppercase tracking-tighter ${
@@ -105,24 +105,35 @@ export default function Home() {
                 </span>
               </div>
 
-              <h3 className="text-xl font-black text-brand-maroon uppercase leading-tight group-hover:text-brand-gold transition-colors">
+              <h3 className="text-lg font-black text-brand-maroon uppercase leading-tight group-hover:text-brand-gold transition-colors line-clamp-1">
                 {asset.item_name}
               </h3>
 
-              <p className="text-slate-500 text-sm mt-3 line-clamp-2 h-10 italic font-medium">
-                {asset.description || "No description provided."}
+              {/* show description from the Inventory/Seeder */}
+              <p className="text-slate-500 text-xs mt-3 italic font-medium leading-relaxed flex-grow">
+                {asset.description}
               </p>
 
               <div className="mt-6 pt-4 border-t border-slate-100 grid grid-cols-2 gap-4">
                 <div>
-                  <p className="text-[10px] text-slate-400 uppercase font-black tracking-widest">Condition</p>
-                  <p className="text-sm font-bold text-slate-700">{asset.condition || "N/A"}</p>
+                  <p className="text-[9px] text-slate-400 uppercase font-black tracking-widest">Audit Status</p>
+                  <p className="text-xs font-bold text-slate-700">{asset.condition}</p>
                 </div>
                 <div>
-                  <p className="text-[10px] text-slate-400 uppercase font-black tracking-widest">Location</p>
-                  <p className="text-sm font-bold text-slate-700">{asset.location || "N/A"}</p>
+                  <p className="text-[9px] text-slate-400 uppercase font-black tracking-widest">Department</p>
+                  <p className="text-xs font-bold text-brand-maroon flex items-center gap-1">
+                    <MapPin size={10} className="text-brand-gold" />
+                    {asset.location}
+                  </p>
                 </div>
               </div>
+              
+              <Link 
+                href="/inventory"
+                className="mt-5 w-full flex justify-center py-2 text-[9px] font-black uppercase tracking-[0.2em] text-slate-300 group-hover:text-brand-maroon border border-transparent group-hover:border-slate-100 rounded-xl transition-all"
+              >
+                Inspect Asset Details
+              </Link>
             </div>
           ))}
         </div>
@@ -131,7 +142,6 @@ export default function Home() {
   )
 }
 
-// Internal Helper Component for Stats 
 function StatCard({ title, value, icon, color }) {
   return (
     <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-200 relative overflow-hidden group hover:shadow-md transition-all">
@@ -139,8 +149,8 @@ function StatCard({ title, value, icon, color }) {
       <div className={`${color} text-white p-3 rounded-2xl w-fit mb-4 shadow-lg`}>
         {icon}
       </div>
-      <div className="text-3xl font-black text-slate-800">{value}</div>
-      <div className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">{title}</div>
+      <div className="text-3xl font-black text-slate-800 tracking-tighter">{value}</div>
+      <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">{title}</div>
     </div>
   );
 }
