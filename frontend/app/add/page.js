@@ -2,9 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import Layout from "../components/Layout";
-import BackButton from "../components/BackButton";
-import { addAsset } from "../lib/api";
+import Layout from "../../components/Layout";
+import BackButton from "../../components/BackButton";
+import { addAsset } from "../../lib/api";
 import { PlusCircle, Sparkles, Building2, ClipboardCheck, Tag } from 'lucide-react';
 
 export default function AddAssetPage() {
