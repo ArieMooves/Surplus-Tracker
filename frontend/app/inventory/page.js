@@ -14,6 +14,7 @@ export default function InventoryPage() {
   const [selectedAsset, setSelectedAsset] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
 
+  // ADMIN PROFILE DATA
   const ADMIN_NAME = "Marcus Mustang";
   const MUSTANG_ID = "M10357379";
 
@@ -38,29 +39,46 @@ export default function InventoryPage() {
     asset.asset_tag.includes(searchTerm)
   );
 
+  // MANUAL UPDATE CONFIRMATION
   const handleSaveStatus = async () => {
     setIsSaving(true);
     try {
       await updateAssetStatus(selectedAsset.asset_id, selectedAsset.current_status);
       await fetchData(); 
+      
+      alert(
+        `💾 SYSTEM OVERRIDE SUCCESSFUL\n\n` +
+        `Asset ${selectedAsset.asset_tag} status is now set to: ${selectedAsset.current_status.toUpperCase()}`
+      );
+      
       setSelectedAsset(null); 
-      alert("Status Updated Successfully");
     } catch (err) {
-      alert("Update Failed");
+      alert("❌ UPDATE FAILED: Database rejected the status change.");
     } finally {
       setIsSaving(false);
     }
   };
 
+  // IMPROVED REDISTRIBUTION CONFIRMATION
   const handleClaim = async () => {
     setIsSaving(true);
+    const targetDept = selectedAsset.location || "the requesting department";
+    
     try {
-      await claimSurplusAsset(selectedAsset.asset_id, "Computer Science");
+      await claimSurplusAsset(selectedAsset.asset_id, targetDept);
       await fetchData();
+      
+      alert(
+        `✅ REDISTRIBUTION APPROVED\n\n` +
+        `Asset Tag: ${selectedAsset.asset_tag}\n` +
+        `Item: ${selectedAsset.item_name}\n` +
+        `New Assignment: ${targetDept}\n\n` +
+        `The system registry has been updated and a transfer log was generated for Marcus Mustang.`
+      );
+      
       setSelectedAsset(null);
-      alert("Asset successfully redistributed to Computer Science!");
     } catch (err) {
-      alert("Redistribution failed: " + err.message);
+      alert("❌ REDISTRIBUTION FAILED: Please verify database connectivity.");
     } finally {
       setIsSaving(false);
     }
@@ -70,6 +88,7 @@ export default function InventoryPage() {
     <Layout>
       <BackButton />
       
+      {/* ADMIN IDENTITY BANNER */}
       <div className="mb-6 flex items-center gap-3 bg-brand-maroon p-4 rounded-2xl border-b-4 border-brand-gold shadow-lg">
         <div className="bg-white/20 p-2 rounded-full">
           <ShieldCheck size={20} className="text-brand-gold" />
@@ -120,8 +139,8 @@ export default function InventoryPage() {
             {loading ? (
               <tr><td colSpan="4" className="p-12 text-center animate-pulse">Accessing Registry...</td></tr>
             ) : filteredAssets.map((asset) => {
-              // HIGHLIGHT LOGIC: If it's surplus but has a location that isn't N/A, it's "Wanted"
-              const isRequested = asset.current_status === 'surplus' && asset.location !== 'N/A' && asset.location;
+              // Logic: Highlight if it's surplus and has a designated department location
+              const isRequested = asset.current_status === 'surplus' && asset.location && asset.location !== 'N/A';
               
               return (
                 <tr 
@@ -198,7 +217,7 @@ export default function InventoryPage() {
                 </p>
               </div>
 
-              {/* APPROVAL BOX: Identifies the requesting department */}
+              {/* APPROVAL BOX */}
               {selectedAsset.current_status === 'surplus' && (
                 <div className="p-4 bg-blue-50 border-2 border-dashed border-blue-400 rounded-2xl space-y-3">
                   <div className="text-center">
@@ -234,17 +253,24 @@ export default function InventoryPage() {
             </div>
 
             <div className="p-6 bg-slate-50 border-t border-slate-100 flex flex-col gap-3">
+              <Link 
+                href="/market"
+                className="w-full bg-brand-gold text-brand-maroon font-black py-4 rounded-xl hover:bg-yellow-500 transition-all flex items-center justify-center gap-2 shadow-md uppercase tracking-widest text-xs"
+              >
+                <BarChart2 size={18} />
+                View Market Analysis
+              </Link>
               <button 
                 onClick={handleSaveStatus}
                 disabled={isSaving}
                 className="w-full bg-brand-maroon text-white font-bold py-4 rounded-xl hover:bg-brand-dark transition-all flex items-center justify-center gap-2 shadow-lg disabled:opacity-50"
               >
                 <Save size={18} />
-                {isSaving ? "COMMITING..." : "SAVE MANUAL CHANGES"}
+                {isSaving ? "COMMITTING..." : "SAVE MANUAL CHANGES"}
               </button>
               <button 
                 onClick={() => setSelectedAsset(null)}
-                className="w-full border-2 border-slate-200 text-slate-500 font-bold py-4 rounded-xl"
+                className="w-full border-2 border-slate-200 text-slate-500 font-bold py-4 rounded-xl hover:bg-slate-100"
               >
                 CLOSE
               </button>
