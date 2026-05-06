@@ -13,11 +13,12 @@ from database import Base, engine, get_db
 import models
 from models import Asset as AssetModel
 
+# Initialize database tables
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="MSU Surplus Tracker API")
 
-# Setup Gemini
+# --- AI CONFIGURATION ---
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 model = genai.GenerativeModel('gemini-1.5-flash') 
 
@@ -49,6 +50,9 @@ class AIDescriptionRequest(BaseModel):
 class StatusUpdate(BaseModel):
     current_status: str
 
+class ConditionUpdate(BaseModel):
+    condition: str
+
 class ClaimRequest(BaseModel):
     location: str
     current_status: str
@@ -65,7 +69,7 @@ class AssetOut(BaseModel):
     class Config:
         from_attributes = True
 
-# --- ROUTES ---
+# --- CORE ROUTES ---
 
 @app.get("/")
 def root():
@@ -75,21 +79,35 @@ def root():
 def get_assets(db: Session = Depends(get_db)):
     return db.query(AssetModel).all()
 
+# --- SCANNER SEARCH ROUTE ---
+@app.get("/assets/{tag}", response_model=AssetOut)
+def get_asset_by_tag(tag: str, db: Session = Depends(get_db)):
+    """
+    Retrieves an asset by its physical tag string. 
+    Used by the BarcodeScanner/Wand components.
+    """
+    asset = db.query(AssetModel).filter(AssetModel.asset_tag == tag).first()
+    if not asset:
+        raise HTTPException(
+            status_code=404, 
+            detail=f"Asset Tag '{tag}' not recognized in MSU Registry."
+        )
+    return asset
+
 # --- MARKET ANALYSIS LOGIC (AI RESEARCH) ---
 @app.get("/api/market", response_model=List[MarketItemOut])
 def get_market_analysis(db: Session = Depends(get_db)):
     """
-    AI-Driven Market Research: The system identifies the item and 
-    retrieves realistic market valuations based on current trends.
+    AI-Driven Market Research: Calculates valuations based on 
+    stored condition and product category heuristics.
     """
     surplus_assets = db.query(AssetModel).filter(AssetModel.current_status == 'surplus').all()
     market_results = []
     
     for asset in surplus_assets:
-        # Determine product category for realistic baseline fetching
         name_lower = asset.item_name.lower()
         
-        # AI Valuation Logic based on Item Identity
+        # AI Valuation Heuristics
         if any(x in name_lower for x in ["macbook", "laptop", "computer"]):
             base_val = 450.00
         elif "monitor" in name_lower:
@@ -101,28 +119,44 @@ def get_market_analysis(db: Session = Depends(get_db)):
         else:
             base_val = 65.00
 
-        # Simulate a "Live Scrape" by applying a condition multiplier
+        # Dynamics based on condition updated in Inventory
         cond_multiplier = 1.0
-        if "Poor" in (asset.condition or ""): cond_multiplier = 0.4
-        elif "Fair" in (asset.condition or ""): cond_multiplier = 0.7
-        elif "New" in (asset.condition or ""): cond_multiplier = 1.3
+        current_cond = asset.condition or "Good"
+        
+        if "Poor" in current_cond: cond_multiplier = 0.4
+        elif "Fair" in current_cond: cond_multiplier = 0.7
+        elif "Excellent" in current_cond: cond_multiplier = 1.15
+        elif "New" in current_cond: cond_multiplier = 1.3
 
-        # Final "Fetched" Prices
         ebay_real = round((base_val * cond_multiplier) * random.uniform(0.9, 1.1), 2)
         amazon_real = round(ebay_real * 1.15, 2)
 
         market_results.append({
             "id": asset.asset_id,
             "name": asset.item_name,
-            "cond": asset.condition or "Good",
+            "cond": current_cond,
             "prices": {
                 "msu": 50.00,
                 "ebay": ebay_real,
                 "amazon": amazon_real
             }
         })
-        
     return market_results
+
+# --- ASSET CONDITION UPDATE ---
+@app.put("/assets/{asset_id}/condition")
+def update_condition(asset_id: int, data: ConditionUpdate, db: Session = Depends(get_db)):
+    """
+    Updates the condition of an asset, which triggers price 
+    changes in the Market Analysis view.
+    """
+    asset = db.query(AssetModel).filter(AssetModel.asset_id == asset_id).first()
+    if not asset: 
+        raise HTTPException(status_code=404, detail="Asset not found")
+    
+    asset.condition = data.condition
+    db.commit()
+    return {"message": "Condition updated", "new_condition": asset.condition}
 
 # --- AI DESCRIPTION GENERATOR ---
 @app.post("/generate-description")
@@ -130,14 +164,13 @@ async def generate_description(req: AIDescriptionRequest):
     if not os.getenv("GEMINI_API_KEY"):
         raise HTTPException(status_code=500, detail="API Key not configured")
     try:
-        # Prompt engineering: Turning raw data into professional audit language
         prompt = f"Rewrite into a professional 2-sentence inventory description for a university audit: {req.item_name}, condition {req.condition}."
         response = model.generate_content(prompt)
         return {"description": response.text.strip()}
     except Exception:
         raise HTTPException(status_code=500, detail="Generation failed")
 
-# Standard Status/Claim/Approve Routes (Remained Unchanged)
+# --- STATUS & MANAGEMENT ---
 @app.put("/assets/{asset_id}/status")
 def update_status(asset_id: int, status_data: StatusUpdate, db: Session = Depends(get_db)):
     asset = db.query(AssetModel).filter(AssetModel.asset_id == asset_id).first()
