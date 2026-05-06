@@ -1,33 +1,47 @@
-@import "tailwindcss";
+/* Standard Tailwind v3 Directives */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-@theme {
-  /* Maroon and Gold brand colors */
-  --color-brand-maroon: #800000;
-  --color-brand-gold: #FFD700;
-  --color-brand-dark: #4a0000;
-  --color-background: #f5f5f4; 
-}
-
+/* MSU Brand Variables and Global Resets */
 :root {
-  
-  background-color: #f5f5f4; 
+  --brand-maroon: #800000;
+  --brand-gold: #FFD700;
+  --brand-dark: #4a0000;
+  --background-hex: #f5f5f4;
 }
 
 html, body {
-  
-  background-color: #f5f5f4; 
+  background-color: var(--background-hex);
+  color: #0f172a; /* text-slate-900 */
   margin: 0;
   padding: 0;
   min-height: 100vh; 
   scroll-behavior: smooth;
   overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 main {
-  background-color: #f5f5f4;
+  background-color: var(--background-hex);
   min-height: 100vh;
 }
 
+/* MSU Custom Utility Classes  */
+@layer components {
+  .bg-brand-maroon {
+    background-color: var(--brand-maroon);
+  }
+  .text-brand-gold {
+    color: var(--brand-gold);
+  }
+  .border-brand-gold {
+    border-color: var(--brand-gold);
+  }
+}
+
+/*  Base Overrides */
 @layer base {
   body {
     @apply text-slate-900 antialiased;
