@@ -77,7 +77,25 @@ export async function updateAssetStatus(id, status) {
 }
 
 /**
-  * Claims a surplus asset for a specific department and resets status to active.
+ * PUT update asset condition
+ * Triggers re-calculation of market value in the backend.
+ */
+export async function updateAssetCondition(id, condition) {
+  try {
+    const res = await fetch(`${BASE_URL}/assets/${id}/condition`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ condition: condition }),
+    });
+    return await handleResponse(res);
+  } catch (err) {
+    console.error(`updateAssetCondition ${id} failed:`, err);
+    throw err;
+  }
+}
+
+/**
+ * Claims a surplus asset for a specific department and resets status to active.
  */
 export async function claimSurplusAsset(assetId, departmentName) {
   try {
@@ -92,6 +110,17 @@ export async function claimSurplusAsset(assetId, departmentName) {
     return await handleResponse(res);
   } catch (err) {
     console.error(`claimSurplusAsset ${assetId} failed:`, err);
+    throw err;
+  }
+}
+
+// GET Market Analysis Data
+export async function getMarketAnalysis() {
+  try {
+    const res = await fetch(`${BASE_URL}/api/market`);
+    return await handleResponse(res);
+  } catch (err) {
+    console.error("getMarketAnalysis failed:", err);
     throw err;
   }
 }
