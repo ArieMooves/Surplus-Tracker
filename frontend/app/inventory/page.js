@@ -5,7 +5,7 @@ import Link from 'next/link';
 import Layout from "../../components/Layout";
 import BackButton from "../../components/BackButton";
 import { getAssets, updateAssetStatus, claimSurplusAsset } from "../../lib/api"; 
-import { Search, X, Edit3, Save, BarChart2, PackageSearch, ShieldCheck, MapPin } from 'lucide-react';
+import { Search, X, Edit3, Save, BarChart2, PackageSearch, ShieldCheck, MapPin, BellRing } from 'lucide-react';
 
 export default function InventoryPage() {
   const [assets, setAssets] = useState([]);
@@ -14,7 +14,6 @@ export default function InventoryPage() {
   const [selectedAsset, setSelectedAsset] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
 
-  // ADMIN PROFILE DATA
   const ADMIN_NAME = "Marcus Mustang";
   const MUSTANG_ID = "M10357379";
 
@@ -53,11 +52,9 @@ export default function InventoryPage() {
     }
   };
 
-  // INTERNAL REDISTRIBUTION CLAIM
   const handleClaim = async () => {
     setIsSaving(true);
     try {
-      // Logic: Claim the asset for Marcus's department (Computer Science)
       await claimSurplusAsset(selectedAsset.asset_id, "Computer Science");
       await fetchData();
       setSelectedAsset(null);
@@ -73,7 +70,6 @@ export default function InventoryPage() {
     <Layout>
       <BackButton />
       
-      {/* ADMIN IDENTITY BANNER */}
       <div className="mb-6 flex items-center gap-3 bg-brand-maroon p-4 rounded-2xl border-b-4 border-brand-gold shadow-lg">
         <div className="bg-white/20 p-2 rounded-full">
           <ShieldCheck size={20} className="text-brand-gold" />
@@ -95,7 +91,7 @@ export default function InventoryPage() {
             Asset Inventory
           </h1>
           <p className="text-slate-500 font-medium">
-            Managing {filteredAssets.length} tracked items
+            Monitoring {filteredAssets.length} tracked items
           </p>
         </div>
 
@@ -110,7 +106,6 @@ export default function InventoryPage() {
         </div>
       </div>
 
-      {/* Main Inventory Table */}
       <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
         <table className="w-full text-left border-collapse">
           <thead className="bg-slate-50 border-b border-slate-200">
@@ -124,31 +119,49 @@ export default function InventoryPage() {
           <tbody className="divide-y divide-slate-100">
             {loading ? (
               <tr><td colSpan="4" className="p-12 text-center animate-pulse">Accessing Registry...</td></tr>
-            ) : filteredAssets.map((asset) => (
-              <tr 
-                key={asset.asset_id} 
-                onClick={() => setSelectedAsset(asset)}
-                className="hover:bg-brand-gold/5 transition-colors group cursor-pointer"
-              >
-                <td className="p-4 font-mono text-sm text-brand-maroon font-bold text-center">{asset.asset_tag}</td>
-                <td className="p-4 text-slate-700 font-medium uppercase text-xs">{asset.item_name}</td>
-                <td className="p-4 text-slate-500 font-bold uppercase text-[10px] tracking-tight">
-                  <div className="flex items-center gap-1.5">
-                    <MapPin size={12} className="text-slate-300" />
-                    {asset.location || "Central Receiving"}
-                  </div>
-                </td>
-                <td className="p-4 text-center">
-                  <span className={`px-2 py-1 rounded-full text-[10px] font-black uppercase tracking-tighter ${
-                    asset.current_status === 'active' ? 'bg-green-100 text-green-700' : 
-                    asset.current_status === 'surplus' ? 'bg-brand-gold/20 text-brand-maroon' : 
-                    'bg-slate-200 text-slate-600'
-                  }`}>
-                    {asset.current_status}
-                  </span>
-                </td>
-              </tr>
-            ))}
+            ) : filteredAssets.map((asset) => {
+              // HIGHLIGHT LOGIC: If it's surplus but has a location that isn't N/A, it's "Wanted"
+              const isRequested = asset.current_status === 'surplus' && asset.location !== 'N/A' && asset.location;
+              
+              return (
+                <tr 
+                  key={asset.asset_id} 
+                  onClick={() => setSelectedAsset(asset)}
+                  className={`transition-colors group cursor-pointer ${
+                    isRequested ? 'bg-blue-50/50 hover:bg-blue-100/50 border-l-4 border-l-blue-500' : 'hover:bg-brand-gold/5'
+                  }`}
+                >
+                  <td className="p-4 font-mono text-sm text-brand-maroon font-bold text-center">
+                    {asset.asset_tag}
+                  </td>
+                  <td className="p-4">
+                    <div className="flex flex-col">
+                      <span className="text-slate-700 font-medium uppercase text-xs">{asset.item_name}</span>
+                      {isRequested && (
+                        <span className="text-[9px] font-black text-blue-600 uppercase flex items-center gap-1 mt-1">
+                          <BellRing size={10} /> Internal Request Pending
+                        </span>
+                      )}
+                    </div>
+                  </td>
+                  <td className="p-4 text-slate-500 font-bold uppercase text-[10px] tracking-tight">
+                    <div className="flex items-center gap-1.5">
+                      <MapPin size={12} className={isRequested ? "text-blue-500" : "text-slate-300"} />
+                      {asset.location || "Central Receiving"}
+                    </div>
+                  </td>
+                  <td className="p-4 text-center">
+                    <span className={`px-2 py-1 rounded-full text-[10px] font-black uppercase tracking-tighter ${
+                      asset.current_status === 'active' ? 'bg-green-100 text-green-700' : 
+                      asset.current_status === 'surplus' ? 'bg-brand-gold/20 text-brand-maroon' : 
+                      'bg-slate-200 text-slate-600'
+                    }`}>
+                      {asset.current_status}
+                    </span>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
@@ -179,34 +192,39 @@ export default function InventoryPage() {
               </div>
 
               <div>
-                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 block">Item History & Cause</label>
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 block">Item History</label>
                 <p className="text-sm text-slate-600 italic bg-slate-50 p-4 rounded-xl border border-slate-100">
-                  {selectedAsset.description || "No audit details recorded."}
+                  {selectedAsset.description}
                 </p>
               </div>
 
-              {/* ADMIN APPROVAL / CLAIM BOX */}
+              {/* APPROVAL BOX: Identifies the requesting department */}
               {selectedAsset.current_status === 'surplus' && (
-                <div className="p-4 bg-blue-50 border-2 border-dashed border-blue-200 rounded-2xl space-y-3">
-                  <p className="text-[9px] font-black text-blue-600 uppercase text-center tracking-widest">
-                    Authorized Action Available
-                  </p>
+                <div className="p-4 bg-blue-50 border-2 border-dashed border-blue-400 rounded-2xl space-y-3">
+                  <div className="text-center">
+                    <p className="text-[9px] font-black text-blue-600 uppercase tracking-widest">
+                      Redistribution Request
+                    </p>
+                    <p className="text-xs font-bold text-slate-700 mt-1">
+                      Target Dept: <span className="text-blue-700 uppercase">{selectedAsset.location || "Unassigned"}</span>
+                    </p>
+                  </div>
                   <button 
                     onClick={handleClaim}
                     className="w-full bg-blue-600 text-white font-black py-3 rounded-xl hover:bg-blue-700 transition-all uppercase text-xs tracking-widest shadow-md flex items-center justify-center gap-2"
                   >
                     <ShieldCheck size={16} />
-                    Approve Redistribution
+                    Approve Transfer
                   </button>
                 </div>
               )}
 
               <div>
-                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 block">Set System Status</label>
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 block">Manual System Override</label>
                 <select 
                   value={selectedAsset.current_status}
                   onChange={(e) => setSelectedAsset({...selectedAsset, current_status: e.target.value})}
-                  className="w-full p-3 border border-slate-300 rounded-xl font-bold text-brand-maroon uppercase text-xs focus:ring-2 focus:ring-brand-gold outline-none"
+                  className="w-full p-3 border border-slate-300 rounded-xl font-bold text-brand-maroon uppercase text-xs"
                 >
                   <option value="active">Active</option>
                   <option value="surplus">Surplus</option>
@@ -216,24 +234,17 @@ export default function InventoryPage() {
             </div>
 
             <div className="p-6 bg-slate-50 border-t border-slate-100 flex flex-col gap-3">
-              <Link 
-                href="/market"
-                className="w-full bg-brand-gold text-brand-maroon font-black py-4 rounded-xl hover:bg-yellow-500 transition-all flex items-center justify-center gap-2 shadow-md uppercase tracking-widest text-xs"
-              >
-                <BarChart2 size={18} />
-                View Market Analysis
-              </Link>
               <button 
                 onClick={handleSaveStatus}
                 disabled={isSaving}
                 className="w-full bg-brand-maroon text-white font-bold py-4 rounded-xl hover:bg-brand-dark transition-all flex items-center justify-center gap-2 shadow-lg disabled:opacity-50"
               >
                 <Save size={18} />
-                {isSaving ? "EXECUTING..." : "COMMIT CHANGES"}
+                {isSaving ? "COMMITING..." : "SAVE MANUAL CHANGES"}
               </button>
               <button 
                 onClick={() => setSelectedAsset(null)}
-                className="w-full border-2 border-slate-200 text-slate-500 font-bold py-4 rounded-xl hover:bg-slate-100"
+                className="w-full border-2 border-slate-200 text-slate-500 font-bold py-4 rounded-xl"
               >
                 CLOSE
               </button>
