@@ -63,7 +63,7 @@ export default function Layout({ children }) {
 
   return (
     
-    <div className="flex h-screen w-full bg-background overflow-hidden pt-10">
+    <div className="flex h-screen w-full bg-background overflow-hidden">
       
       {/* SIDEBAR */}
       <aside className="w-64 bg-brand-maroon text-white flex flex-col shadow-2xl z-20">
@@ -119,7 +119,7 @@ export default function Layout({ children }) {
 
       {/* MAIN CONTENT AREA */}
       <div className="flex-1 flex flex-col min-w-0 bg-background">
-        <header className="h-16 bg-white border-b-4 border-brand-gold flex items-center px-8 justify-between shadow-sm z-10">
+        <header className="h-32 bg-white border-b-4 border-brand-gold flex items-center px-10 justify-between shadow-sm z-10">
           <h2 className="font-bold text-brand-maroon uppercase tracking-tight">
             {menuItems.find(i => i.href === pathname)?.name || "System Overview"}
           </h2>
