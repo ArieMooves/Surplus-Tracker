@@ -11,24 +11,26 @@
   --background-hex: #f5f5f4;
 }
 
+/* Core Styling - Standard CSS  */
 html, body {
-  background-color: var(--background-hex);
-  color: #0f172a; /* text-slate-900 */
+  background-color: #f5f5f4;
+  color: #0f172a; /* This is the hex for slate-900 */
   margin: 0;
   padding: 0;
   min-height: 100vh; 
   scroll-behavior: smooth;
   overflow-x: hidden;
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
 main {
-  background-color: var(--background-hex);
+  background-color: #f5f5f4;
   min-height: 100vh;
 }
 
-/* MSU Custom Utility Classes  */
+/* MSU Custom Utility Classes */
 @layer components {
   .bg-brand-maroon {
     background-color: var(--brand-maroon);
@@ -36,14 +38,10 @@ main {
   .text-brand-gold {
     color: var(--brand-gold);
   }
+  .text-brand-maroon {
+    color: var(--brand-maroon);
+  }
   .border-brand-gold {
     border-color: var(--brand-gold);
-  }
-}
-
-/*  Base Overrides */
-@layer base {
-  body {
-    @apply text-slate-900 antialiased;
   }
 }
